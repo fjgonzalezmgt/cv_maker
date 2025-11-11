@@ -56,7 +56,7 @@ Puedes crear el entorno de forma automática usando Conda:
 
 ```bash
 conda env create -f environment.yml
-conda activate generador-cv-html
+conda activate cv_maker
 ```
 
 Asegúrate de crear un archivo `.env` en la raíz del proyecto con tu clave de OpenAI:
