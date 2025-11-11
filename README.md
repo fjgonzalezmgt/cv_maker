@@ -90,6 +90,9 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxx
 **Salida esperada:**  
 Un documento HTML profesional con diseño limpio, secciones completas, redacción ATS-friendly y métricas de impacto, listo para impresión o envío digital.
 
+Puedes ver un ejemplo real generado con esta aplicación en el siguiente enlace:  
+👉 [Ejemplo de CV generado](https://qualityanalytics.net/wp-content/uploads/2025/11/CV.html)
+
 ---
 
 ## 🧠 Arquitectura y flujo
