@@ -1,0 +1,70 @@
+# === Archivos del sistema ===
+.DS_Store
+Thumbs.db
+
+# === Entornos virtuales ===
+venv/
+env/
+.venv/
+ENV/
+
+# === Archivos de configuración local ===
+*.env
+.env
+*.local
+*.ini
+*.cfg
+
+# === Archivos de logs y temporales ===
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.orig
+__pycache__/
+*.py[cod]
+*$py.class
+
+# === Carpetas de compilación ===
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# === IDEs y editores ===
+.vscode/
+.idea/
+.spyderproject
+.spyproject
+*.sublime-project
+*.sublime-workspace
+
+# === Archivos de pruebas ===
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+.cache
+
+# === Archivos de Jupyter Notebooks ===
+.ipynb_checkpoints
+
+# === Archivos de dependencias ===
+Pipfile.lock
+poetry.lock
+
+# === Archivos del sistema operativo ===
+desktop.ini
+
+# === Archivos de control de versiones secundarios ===
+*.orig
+*.rej
+
+# === Archivos de datos temporales ===
+data/raw/
+data/tmp/
+data/temp/
