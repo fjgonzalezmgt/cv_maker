@@ -18,6 +18,6 @@ jobs:
           python-version: '3.11'
           
       - name: Ejecutar script principal
-        run: python main.py
+        run: python app.py
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
