@@ -22,6 +22,7 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 ```
 ├── app.py                # Interfaz principal con Streamlit
 ├── openai_client.py      # Módulo de conexión y llamada a la API de OpenAI
+├── environment.yml       # Archivo para crear el entorno Conda
 ├── .env.example          # Ejemplo de archivo de configuración de la API Key
 └── README.md             # Este archivo
 ```
@@ -34,6 +35,9 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 - **openai_client.py:**  
   Contiene las funciones auxiliares de conexión con la API de OpenAI. Procesa imágenes y PDFs, y maneja la llamada a la API con los mensajes estructurados en el formato esperado por la **Responses API**.
 
+- **environment.yml:**  
+  Permite crear un entorno Conda con todas las dependencias necesarias para ejecutar la aplicación.
+
 ---
 
 ## ⚙️ Requisitos
@@ -44,17 +48,18 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 - Streamlit  
 - OpenAI SDK  
 - Pillow  
-- python-dotenv
+- python-dotenv  
 
 ### Instalación
 
+Puedes crear el entorno de forma automática usando Conda:
+
 ```bash
-git clone https://github.com/tu-usuario/generador-cv-html.git
-cd generador-cv-html
-pip install -r requirements.txt
+conda env create -f environment.yml
+conda activate generador-cv-html
 ```
 
-Crea un archivo `.env` en la raíz del proyecto con tu clave de OpenAI:
+Asegúrate de crear un archivo `.env` en la raíz del proyecto con tu clave de OpenAI:
 
 ```
 OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxx
