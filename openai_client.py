@@ -1,3 +1,15 @@
+"""
+Cliente de OpenAI para procesamiento de imágenes y archivos.
+
+Este módulo proporciona funcionalidades para interactuar con la API de OpenAI,
+incluyendo el procesamiento y envío de imágenes y archivos, así como la generación
+de respuestas mediante modelos de chat.
+
+Autor: Francisco González
+Fecha: Noviembre 2025
+Organización: Quality Analytics
+"""
+
 from __future__ import annotations
 
 import base64
@@ -8,11 +20,37 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 from openai import OpenAI
 from PIL import Image
 
+# Extensiones de imagen soportadas y sus tipos MIME correspondientes
 IMAGE_EXTS = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
 
 
 def _resize_image_bytes(path: str, max_side: int = 2048, quality: int = 85) -> bytes:
-    """Redimensiona una imagen y la convierte a JPEG optimizado."""
+    """
+    Redimensiona una imagen y la convierte a JPEG optimizado.
+    
+    Esta función toma una imagen de cualquier formato soportado, la convierte a RGB,
+    y la redimensiona si es necesario para que su lado más grande no exceda max_side.
+    Finalmente, la guarda como JPEG optimizado con la calidad especificada.
+    
+    Args:
+        path (str): Ruta al archivo de imagen a procesar.
+        max_side (int, optional): Tamaño máximo permitido para el lado más largo.
+            Por defecto es 2048 píxeles.
+        quality (int, optional): Calidad de compresión JPEG (1-100).
+            Por defecto es 85.
+    
+    Returns:
+        bytes: Los bytes de la imagen procesada en formato JPEG.
+    
+    Raises:
+        FileNotFoundError: Si el archivo no existe.
+        PIL.UnidentifiedImageError: Si el archivo no es una imagen válida.
+    
+    Example:
+        >>> image_bytes = _resize_image_bytes("foto.png", max_side=1024, quality=90)
+        >>> len(image_bytes)
+        125432
+    """
     print(f"[DEBUG] _resize_image_bytes: Procesando imagen {path}")
     im = Image.open(path).convert("RGB")
     w, h = im.size
@@ -28,7 +66,29 @@ def _resize_image_bytes(path: str, max_side: int = 2048, quality: int = 85) -> b
 
 
 def _guess_mime(path: str) -> str:
-    """Determina el tipo MIME basándose en la extensión del archivo."""
+    """
+    Determina el tipo MIME basándose en la extensión del archivo.
+    
+    Esta función analiza la extensión del archivo y retorna el tipo MIME correspondiente.
+    Soporta imágenes (.png, .jpg, .jpeg, .webp), archivos PDF, y archivos genéricos.
+    
+    Args:
+        path (str): Ruta al archivo cuyo tipo MIME se desea determinar.
+    
+    Returns:
+        str: El tipo MIME del archivo. Posibles valores:
+            - "image/png" para archivos .png
+            - "image/jpeg" para archivos .jpg y .jpeg
+            - "image/webp" para archivos .webp
+            - "application/pdf" para archivos .pdf
+            - "application/octet-stream" para cualquier otro tipo
+    
+    Example:
+        >>> _guess_mime("documento.pdf")
+        'application/pdf'
+        >>> _guess_mime("foto.jpg")
+        'image/jpeg'
+    """
     ext = os.path.splitext(path.lower())[1]
     print(f"[DEBUG] _guess_mime: Archivo {path}, extensión: {ext}")
     if ext in IMAGE_EXTS:
@@ -44,9 +104,34 @@ def _guess_mime(path: str) -> str:
 
 def _file_to_content_items(path: str, max_bytes: int = 8_000_000) -> List[dict]:
     """
-    Convierte un archivo a items de contenido para la API.
-    - Imágenes: redimensiona y retorna input_image
-    - Otros: codifica en base64 y retorna input_file
+    Convierte un archivo a items de contenido para la API de OpenAI.
+    
+    Esta función procesa archivos de diferentes tipos:
+    - Imágenes: redimensiona automáticamente y retorna como 'input_image'
+    - Otros archivos: codifica en base64 y retorna como 'input_file'
+    
+    Si el archivo excede el tamaño máximo, se trunca y se añade un mensaje de advertencia.
+    
+    Args:
+        path (str): Ruta al archivo a procesar.
+        max_bytes (int, optional): Tamaño máximo permitido en bytes.
+            Por defecto es 8,000,000 bytes (8 MB).
+    
+    Returns:
+        List[dict]: Lista de items de contenido para la API. Puede contener:
+            - Para imágenes: dict con type="input_image" y image_url en formato data URL
+            - Para otros archivos: dict con type="input_file", filename, y file_data
+            - Si se trunca: item adicional con type="input_text" con advertencia
+    
+    Raises:
+        FileNotFoundError: Si el archivo especificado no existe.
+    
+    Example:
+        >>> items = _file_to_content_items("documento.pdf")
+        >>> len(items)
+        1
+        >>> items[0]["type"]
+        'input_file'
     """
     print(f"[DEBUG] _file_to_content_items: Procesando archivo {path}")
     if not os.path.exists(path):
@@ -108,8 +193,33 @@ def create_openai_client(
     timeout: float = 60.0,
 ) -> OpenAI:
     """
-    Crea y retorna un cliente de OpenAI.
-    Si no se proporciona api_key, intenta obtenerla de la variable de entorno OPENAI_API_KEY.
+    Crea y retorna un cliente de OpenAI configurado.
+    
+    Esta función inicializa un cliente de la API de OpenAI con las credenciales proporcionadas.
+    Si no se proporciona una API key explícitamente, intenta obtenerla de la variable de
+    entorno OPENAI_API_KEY.
+    
+    Args:
+        api_key (Optional[str], optional): API key de OpenAI. Si es None, se usa
+            la variable de entorno OPENAI_API_KEY. Por defecto es None.
+        organization (Optional[str], optional): ID de la organización de OpenAI.
+            Por defecto es None.
+        project (Optional[str], optional): ID del proyecto de OpenAI.
+            Por defecto es None.
+        timeout (float, optional): Tiempo máximo de espera en segundos para las
+            peticiones a la API. Por defecto es 60.0 segundos.
+    
+    Returns:
+        OpenAI: Cliente de OpenAI configurado y listo para usar.
+    
+    Raises:
+        RuntimeError: Si no se encuentra la API key ni en los parámetros ni en
+            las variables de entorno.
+    
+    Example:
+        >>> client = create_openai_client(api_key="sk-...")
+        >>> # O usando variable de entorno
+        >>> client = create_openai_client()
     """
     print(f"[DEBUG] create_openai_client: Creando cliente OpenAI")
     
@@ -153,25 +263,76 @@ def chat_completion(
     """
     Realiza una consulta a la API de OpenAI usando Responses API.
     
+    Esta es la función principal del módulo que permite interactuar con los modelos de
+    chat de OpenAI. Soporta el envío de texto, imágenes y archivos, así como streaming
+    de respuestas.
+    
     Args:
-        system_prompt: Prompt del sistema (rol developer)
-        user_content: Contenido del usuario (str o lista de strings)
-        files: Lista de rutas de archivos a adjuntar
-        model: Modelo a usar
-        temperature: Temperatura de generación
-        max_output_tokens: Máximo de tokens de salida
-        stream: Si debe hacer streaming
-        extra_messages: Mensajes adicionales para incluir
-        max_file_bytes: Tamaño máximo de archivo en bytes
-        reasoning: Parámetros de razonamiento
-        text: Parámetros de texto
-        api_key: API key de OpenAI
-        organization: ID de organización
-        project: ID de proyecto
-        timeout: Timeout en segundos
-        
+        system_prompt (str): Prompt del sistema que define el comportamiento del modelo.
+            Se envía con rol 'developer'.
+        user_content (Union[str, List[str]]): Contenido del mensaje del usuario.
+            Puede ser un string único o una lista de strings que se concatenarán.
+        files (Optional[List[str]], optional): Lista de rutas de archivos a adjuntar
+            al mensaje. Soporta imágenes y PDFs. Por defecto es None.
+        model (str, optional): Identificador del modelo de OpenAI a utilizar.
+            Por defecto es "gpt-4.1-mini".
+        temperature (float, optional): Controla la aleatoriedad de las respuestas.
+            Valores más bajos (cercanos a 0) hacen respuestas más deterministas.
+            Por defecto es 0.2.
+        max_output_tokens (Optional[int], optional): Número máximo de tokens en la
+            respuesta. Si es None, usa el límite por defecto del modelo.
+            Por defecto es None.
+        stream (bool, optional): Si es True, retorna un generador que produce la
+            respuesta en tiempo real. Si es False, espera la respuesta completa.
+            Por defecto es False.
+        extra_messages (Optional[List[dict]], optional): Mensajes adicionales para
+            incluir en la conversación (historial de chat). Por defecto es None.
+        max_file_bytes (int, optional): Tamaño máximo permitido para archivos adjuntos
+            en bytes. Por defecto es 8,000,000 (8 MB).
+        reasoning (Optional[Dict[str, Any]], optional): Parámetros de configuración
+            para el razonamiento del modelo. Por defecto es None.
+        text (Optional[Dict[str, Any]], optional): Parámetros de configuración
+            para la generación de texto. Por defecto es None.
+        api_key (Optional[str], optional): API key de OpenAI. Si es None, se usa
+            la variable de entorno. Por defecto es None.
+        organization (Optional[str], optional): ID de organización de OpenAI.
+            Por defecto es None.
+        project (Optional[str], optional): ID de proyecto de OpenAI.
+            Por defecto es None.
+        timeout (float, optional): Tiempo máximo de espera en segundos.
+            Por defecto es 60.0.
+    
     Returns:
-        String con la respuesta o generador para streaming
+        Union[str, Iterable[str]]: Si stream=False, retorna un string con la respuesta
+            completa. Si stream=True, retorna un generador que produce fragmentos de
+            texto a medida que se generan.
+    
+    Raises:
+        ValueError: Si no se proporciona contenido para enviar a la API.
+        RuntimeError: Si ocurre un error durante la comunicación con la API.
+        FileNotFoundError: Si alguno de los archivos especificados no existe.
+    
+    Example:
+        >>> # Uso básico
+        >>> respuesta = chat_completion(
+        ...     system_prompt="Eres un asistente útil",
+        ...     user_content="¿Qué es Python?"
+        ... )
+        
+        >>> # Con archivos adjuntos
+        >>> respuesta = chat_completion(
+        ...     system_prompt="Analiza estas imágenes",
+        ...     user_content="Describe lo que ves",
+        ...     files=["imagen1.jpg", "imagen2.png"]
+        ... )
+        
+        >>> # Con streaming
+        >>> for fragmento in chat_completion(
+        ...     system_prompt="Eres un poeta",
+        ...     user_content="Escribe un poema",
+        ...     stream=True
+        ... ):
+        ...     print(fragmento, end="")
     """
     print(f"[DEBUG] chat_completion: Iniciando")
     print(f"[DEBUG] chat_completion: Modelo: {model}, Temperatura: {temperature}")

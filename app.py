@@ -1,3 +1,33 @@
+"""
+Generador de CV en HTML con OpenAI
+
+Este módulo proporciona una aplicación Streamlit para generar currículums vitae
+profesionales en formato HTML utilizando modelos de lenguaje de OpenAI.
+
+Autor: Francisco Gonzalez
+Fecha: Noviembre 2025
+Versión: 1.0
+
+Características principales:
+    - Generación de CV en HTML basado en un brief descriptivo
+    - Soporte para modelos GPT-4 y GPT-4o de OpenAI
+    - Personalización del color de acento del CV
+    - Carga de foto de perfil y código QR
+    - Vista previa en tiempo real del CV generado
+    - Descarga del HTML resultante
+
+Dependencias:
+    - streamlit: Framework web para la interfaz de usuario
+    - openai: Cliente para la API de OpenAI
+    - python-dotenv: Gestión de variables de entorno
+
+Uso:
+    $ streamlit run app.py
+    
+Variables de entorno requeridas:
+    OPENAI_API_KEY: Clave de API de OpenAI
+"""
+
 from __future__ import annotations
 
 import base64
@@ -12,7 +42,8 @@ import streamlit as st
 from openai_client import chat_completion
 from dotenv import load_dotenv
 
-SYSTEM_PROMPT = """## System Prompt (pégalo como “System” en tu GPT)
+# Prompt del sistema que define las reglas de generación de CV para el modelo de IA
+SYSTEM_PROMPT = """## System Prompt (pégalo como "System" en tu GPT)
 
 Eres un generador de CVs en HTML. Tu única salida debe ser **un documento HTML completo** y **auto-contenido** (con `<!DOCTYPE html>`, `<html>`, `<head>`, `<style>`, `<body>`) que respete **exactamente** la estructura, clases y estilos del **template base** incluido al final de este mensaje. Tu función es transformar un brief o prompt del usuario en un CV profesional y listo para imprimir, adaptado a su perfil y objetivo.
 
@@ -272,20 +303,42 @@ Eres un generador de CVs en HTML. Tu única salida debe ser **un documento HTML 
 ```
 """
 
-DEFAULT_ACCENT = "#0b3a6e"
-DEFAULT_MODEL = "gpt-4.1-mini"
+# Constantes de configuración
+DEFAULT_ACCENT = "#0b3a6e"  # Color azul oscuro por defecto para el acento del CV
+DEFAULT_MODEL = "gpt-4.1-mini"  # Modelo de OpenAI predeterminado
 AVAILABLE_MODELS: List[str] = [
     "gpt-4.1-mini",
     "gpt-4.1",
     "gpt-4o-mini",
     "gpt-4o",
 ]
-ENV_VAR_NAME = "OPENAI_API_KEY"
+ENV_VAR_NAME = "OPENAI_API_KEY"  # Nombre de la variable de entorno para la API key
 
+# Cargar variables de entorno desde archivo .env
 load_dotenv()
 
 
 def build_content(brief: str, accent: str, include_accent_hint: bool, has_avatar: bool, has_qr: bool) -> str:
+    """
+    Construye el contenido del prompt para el modelo de IA.
+    
+    Combina el brief del usuario con instrucciones adicionales sobre el color
+    de acento y los archivos adjuntos (avatar y QR).
+    
+    Args:
+        brief: Descripción del perfil profesional proporcionada por el usuario
+        accent: Color hexadecimal para el acento del CV (ej: "#0b3a6e")
+        include_accent_hint: Si se debe incluir la instrucción del color en el prompt
+        has_avatar: Indica si se proporcionó una foto de perfil
+        has_qr: Indica si se proporcionó un código QR
+        
+    Returns:
+        String con el prompt completo para enviar al modelo
+        
+    Example:
+        >>> build_content("Analista de datos con 5 años...", "#0b3a6e", True, True, False)
+        'Analista de datos con 5 años...\\n\\nColor de acento preferido: #0b3a6e...'
+    """
     parts = [brief.strip()]
     if include_accent_hint and accent:
         parts.append(f"Color de acento preferido: {accent}")
@@ -297,6 +350,22 @@ def build_content(brief: str, accent: str, include_accent_hint: bool, has_avatar
 
 
 def persist_uploaded_files(files: List) -> List[str]:
+    """
+    Guarda archivos cargados en ubicaciones temporales del sistema.
+    
+    Toma los archivos subidos por el usuario y los guarda en archivos temporales
+    en el disco para que puedan ser procesados por el cliente de OpenAI.
+    
+    Args:
+        files: Lista de objetos UploadedFile de Streamlit
+        
+    Returns:
+        Lista de rutas absolutas a los archivos temporales creados
+        
+    Note:
+        Los archivos temporales no se eliminan automáticamente. El llamador
+        es responsable de eliminarlos después de usarlos.
+    """
     temp_paths: List[str] = []
     for file in files:
         suffix = Path(file.name).suffix or ""
@@ -307,6 +376,23 @@ def persist_uploaded_files(files: List) -> List[str]:
 
 
 def file_to_data_uri(file) -> Optional[str]:
+    """
+    Convierte un archivo cargado a un Data URI en base64.
+    
+    Toma un archivo de imagen y lo convierte a un formato Data URI que puede
+    ser incrustado directamente en el HTML generado.
+    
+    Args:
+        file: Objeto UploadedFile de Streamlit que contiene una imagen
+        
+    Returns:
+        String con el Data URI (ej: "data:image/png;base64,iVBORw0KG...")
+        o None si el archivo no es una imagen válida
+        
+    Example:
+        >>> data_uri = file_to_data_uri(avatar_file)
+        >>> # "data:image/png;base64,iVBORw0KGgoAAAANSU..."
+    """
     mime = file.type or mimetypes.guess_type(file.name)[0] or "image/png"
     if not mime.startswith("image/"):
         return None
@@ -318,6 +404,24 @@ def file_to_data_uri(file) -> Optional[str]:
 
 
 def apply_image_overrides(html: str, avatar_uri: Optional[str], qr_uri: Optional[str]) -> str:
+    """
+    Reemplaza las referencias de imágenes placeholder en el HTML con Data URIs reales.
+    
+    Sustituye los placeholders "avatar.png" y "qr.png" en el HTML generado
+    con los Data URIs de las imágenes reales proporcionadas por el usuario.
+    
+    Args:
+        html: String con el código HTML generado por el modelo
+        avatar_uri: Data URI de la foto de perfil (opcional)
+        qr_uri: Data URI del código QR (opcional)
+        
+    Returns:
+        HTML actualizado con las imágenes incrustadas
+        
+    Note:
+        Solo se realiza un reemplazo por imagen para evitar modificaciones
+        no deseadas en otros lugares del HTML.
+    """
     updated = html
     if avatar_uri:
         updated = updated.replace('src="avatar.png"', f'src="{avatar_uri}"', 1)
@@ -329,27 +433,54 @@ def apply_image_overrides(html: str, avatar_uri: Optional[str], qr_uri: Optional
 
 
 def main() -> None:
+    """
+    Función principal que ejecuta la aplicación Streamlit.
+    
+    Configura la interfaz de usuario, maneja la entrada del usuario,
+    realiza la llamada al modelo de OpenAI y muestra los resultados.
+    
+    La aplicación consta de:
+    - Sidebar con configuración del modelo y parámetros
+    - Área principal con campos de entrada (brief, imágenes, archivos)
+    - Botón de generación que invoca el modelo de IA
+    - Vista previa del CV generado
+    - Botón de descarga del HTML resultante
+    
+    Raises:
+        Exception: Si hay errores en la comunicación con OpenAI
+        
+    Note:
+        Requiere que OPENAI_API_KEY esté definida en las variables de entorno
+        o en un archivo .env en el directorio del proyecto.
+    """
+    # Configuración de la página de Streamlit
     st.set_page_config(page_title="Generador de CV HTML", layout="wide")
     st.title("Generador de CV HTML con OpenAI")
     st.write(
         "Escribe un brief con el perfil, experiencia y objetivos. El modelo entregará un CV HTML listo para imprimir basándose en el template provisto."
     )
 
+    # Sidebar con opciones de configuración
     with st.sidebar:
         st.header("Configuración")
     model = st.selectbox("Modelo", AVAILABLE_MODELS, index=AVAILABLE_MODELS.index(DEFAULT_MODEL))
     accent = st.color_picker("Color de acento", DEFAULT_ACCENT)
     max_tokens = st.slider("Tokens máximos de salida", min_value=1024, max_value=8000, value=6000, step=256)
+    
+    # Verificar si la API key está configurada
     if os.getenv(ENV_VAR_NAME):
       st.success("Clave de API detectada en el entorno.")
     else:
       st.error(f"No se encontró {ENV_VAR_NAME} en el entorno ni en el archivo .env.")
 
+    # Campo de texto para el brief del CV
     brief = st.text_area(
         "Brief del CV",
         height=320,
         placeholder="Ejemplo: Perfil senior de analítica de datos con 8 años en retail, habilidades en SQL, Python, Power BI...",
     )
+    
+    # Sección de carga de imágenes (avatar y QR)
     col_avatar, col_qr = st.columns(2)
     with col_avatar:
         avatar_upload = st.file_uploader(
@@ -368,6 +499,7 @@ def main() -> None:
             key="qr_uploader",
         )
 
+    # Archivos adicionales de contexto
     uploaded_files = st.file_uploader(
         "Adjunta archivos de referencia (opcional)",
         type=["png", "jpg", "jpeg", "webp", "pdf"],
@@ -375,31 +507,40 @@ def main() -> None:
         help="Se enviarán como contexto adicional al modelo.",
         key="context_files",
     )
+    
+    # Opción para incluir el color de acento en el prompt
     include_accent_hint = st.checkbox(
         "Incluir el color seleccionado en el prompt", value=True, help="Añade una instrucción explícita para cambiar --accent."
     )
 
+    # Botón para generar el CV
     generate = st.button("Generar CV", type="primary")
 
+    # Proceso de generación cuando se presiona el botón
     if generate:
+        # Validar que se haya ingresado un brief
         if not brief.strip():
             st.warning("Ingresa un brief para generar el CV.")
             return
 
+        # Obtener la API key
         api_key = os.getenv(ENV_VAR_NAME)
         if not api_key:
             st.error("Define la API Key en el archivo .env o en la variable de entorno OPENAI_API_KEY.")
             return
 
+        # Convertir imágenes a Data URIs
         avatar_data_uri = file_to_data_uri(avatar_upload) if avatar_upload else None
         qr_data_uri = file_to_data_uri(qr_upload) if qr_upload else None
 
+        # Preparar lista de archivos para enviar como contexto
         files_for_context: List = list(uploaded_files) if uploaded_files else []
         if avatar_upload:
             files_for_context.append(avatar_upload)
         if qr_upload:
             files_for_context.append(qr_upload)
 
+        # Generar el CV usando el modelo de OpenAI
         temp_paths: List[str] = []
         try:
             temp_paths = persist_uploaded_files(files_for_context)
@@ -417,19 +558,25 @@ def main() -> None:
             st.error(f"Error al generar el CV: {exc}")
             return
         finally:
+            # Limpiar archivos temporales
             for path in temp_paths:
                 try:
                     os.unlink(path)
                 except OSError:
                     pass
 
+        # Aplicar las imágenes al HTML y guardar en sesión
         html_response = apply_image_overrides(response, avatar_data_uri, qr_data_uri)
         st.session_state["cv_html"] = html_response
 
+    # Mostrar el CV generado si existe en la sesión
     if "cv_html" in st.session_state:
         html = st.session_state["cv_html"]
+        # Vista previa del CV en un iframe
         st.components.v1.html(html, height=900, scrolling=True)
+        # Botón para descargar el HTML
         st.download_button("Descargar HTML", data=html, file_name="cv.html", mime="text/html")
+        # Botón para limpiar el resultado
         if st.button("Limpiar resultado"):
             st.session_state.pop("cv_html", None)
 
