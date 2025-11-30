@@ -1,5 +1,19 @@
 # Generador de CV en HTML con OpenAI
 
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.51-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-412991?style=for-the-badge&logo=openai&logoColor=white)
+![License](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey?style=for-the-badge)
+
+![Pandas](https://img.shields.io/badge/Pandas-2.3-150458?style=flat-square&logo=pandas&logoColor=white)
+![Pillow](https://img.shields.io/badge/Pillow-12.0-3776AB?style=flat-square&logo=python&logoColor=white)
+![NumPy](https://img.shields.io/badge/NumPy-2.3-013243?style=flat-square&logo=numpy&logoColor=white)
+![Conda](https://img.shields.io/badge/Conda-Environment-44A833?style=flat-square&logo=anaconda&logoColor=white)
+![HTML5](https://img.shields.io/badge/HTML5-Output-E34F26?style=flat-square&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-Styled-1572B6?style=flat-square&logo=css3&logoColor=white)
+
+---
+
 Aplicación desarrollada en **Python + Streamlit** que genera **currículums en HTML listos para imprimir**, a partir de un breve perfil profesional redactado por el usuario.  
 El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un documento HTML completo basado en un **template estructurado, semántico y optimizado para ATS**.
 
