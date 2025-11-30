@@ -31,6 +31,7 @@ Variables de entorno requeridas:
 from __future__ import annotations
 
 import base64
+import logging
 import mimetypes
 import os
 import tempfile
@@ -38,9 +39,31 @@ from pathlib import Path
 from typing import List, Optional
 
 import streamlit as st
-
-from openai_client import chat_completion
 from dotenv import load_dotenv
+
+from openai_client import chat_completion, OpenAIClientError
+from config import (
+    ENV_VAR_API_KEY,
+    DEFAULT_MODEL,
+    AVAILABLE_MODELS,
+    DEFAULT_ACCENT_COLOR,
+    DEFAULT_MAX_TOKENS,
+    MIN_TOKENS,
+    MAX_TOKENS,
+    TOKEN_STEP,
+    PAGE_TITLE,
+    BRIEF_TEXT_AREA_HEIGHT,
+    PREVIEW_IFRAME_HEIGHT,
+    SUPPORTED_IMAGE_EXTENSIONS,
+    SUPPORTED_CONTEXT_EXTENSIONS,
+    MESSAGES,
+    LOG_LEVEL,
+    LOG_FORMAT,
+)
+
+# Configurar logging
+logging.basicConfig(level=getattr(logging, LOG_LEVEL), format=LOG_FORMAT)
+logger = logging.getLogger(__name__)
 
 # Prompt del sistema que define las reglas de generación de CV para el modelo de IA
 SYSTEM_PROMPT = """## System Prompt (pégalo como "System" en tu GPT)
@@ -303,17 +326,6 @@ Eres un generador de CVs en HTML. Tu única salida debe ser **un documento HTML 
 ```
 """
 
-# Constantes de configuración
-DEFAULT_ACCENT = "#0b3a6e"  # Color azul oscuro por defecto para el acento del CV
-DEFAULT_MODEL = "gpt-4.1-mini"  # Modelo de OpenAI predeterminado
-AVAILABLE_MODELS: List[str] = [
-    "gpt-4.1-mini",
-    "gpt-4.1",
-    "gpt-4o-mini",
-    "gpt-4o",
-]
-ENV_VAR_NAME = "OPENAI_API_KEY"  # Nombre de la variable de entorno para la API key
-
 # Cargar variables de entorno desde archivo .env
 load_dotenv()
 
@@ -438,96 +450,153 @@ def main() -> None:
     
     Configura la interfaz de usuario, maneja la entrada del usuario,
     realiza la llamada al modelo de OpenAI y muestra los resultados.
-    
-    La aplicación consta de:
-    - Sidebar con configuración del modelo y parámetros
-    - Área principal con campos de entrada (brief, imágenes, archivos)
-    - Botón de generación que invoca el modelo de IA
-    - Vista previa del CV generado
-    - Botón de descarga del HTML resultante
-    
-    Raises:
-        Exception: Si hay errores en la comunicación con OpenAI
-        
-    Note:
-        Requiere que OPENAI_API_KEY esté definida en las variables de entorno
-        o en un archivo .env en el directorio del proyecto.
     """
     # Configuración de la página de Streamlit
-    st.set_page_config(page_title="Generador de CV HTML", layout="wide")
-    st.title("Generador de CV HTML con OpenAI")
-    st.write(
-        "Escribe un brief con el perfil, experiencia y objetivos. El modelo entregará un CV HTML listo para imprimir basándose en el template provisto."
+    st.set_page_config(
+        page_title=PAGE_TITLE,
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
+    
+    # Título y descripción
+    st.title("🎯 Generador de CV HTML con OpenAI")
+    st.markdown(
+        """Escribe un **brief** con tu perfil, experiencia y objetivos profesionales. 
+        El modelo generará un CV HTML profesional listo para imprimir."""
     )
 
-    # Sidebar con opciones de configuración
+    # =========================================================================
+    # SIDEBAR - Configuración
+    # =========================================================================
     with st.sidebar:
-        st.header("Configuración")
-    model = st.selectbox("Modelo", AVAILABLE_MODELS, index=AVAILABLE_MODELS.index(DEFAULT_MODEL))
-    accent = st.color_picker("Color de acento", DEFAULT_ACCENT)
-    max_tokens = st.slider("Tokens máximos de salida", min_value=1024, max_value=8000, value=6000, step=256)
-    
-    # Verificar si la API key está configurada
-    if os.getenv(ENV_VAR_NAME):
-      st.success("Clave de API detectada en el entorno.")
-    else:
-      st.error(f"No se encontró {ENV_VAR_NAME} en el entorno ni en el archivo .env.")
+        st.header("⚙️ Configuración")
+        
+        # Estado de la API key
+        api_key = os.getenv(ENV_VAR_API_KEY)
+        if api_key:
+            st.success(MESSAGES["api_key_found"])
+        else:
+            st.error(MESSAGES["api_key_missing"])
+        
+        st.divider()
+        
+        # Selección de modelo
+        model = st.selectbox(
+            "🤖 Modelo",
+            AVAILABLE_MODELS,
+            index=AVAILABLE_MODELS.index(DEFAULT_MODEL),
+            help="Selecciona el modelo de OpenAI a utilizar.",
+        )
+        
+        # Color de acento
+        accent = st.color_picker(
+            "🎨 Color de acento",
+            DEFAULT_ACCENT_COLOR,
+            help="Color principal para títulos y acentos del CV.",
+        )
+        
+        # Tokens máximos
+        max_tokens = st.slider(
+            "📊 Tokens máximos",
+            min_value=MIN_TOKENS,
+            max_value=MAX_TOKENS,
+            value=DEFAULT_MAX_TOKENS,
+            step=TOKEN_STEP,
+            help="Límite de tokens para la respuesta del modelo.",
+        )
+        
+        # Opción para incluir el color de acento en el prompt
+        include_accent_hint = st.checkbox(
+            "Incluir color en el prompt",
+            value=True,
+            help="Añade instrucción explícita para usar el color seleccionado.",
+        )
+        
+        st.divider()
+        
+        # Información del proyecto
+        st.markdown("""        
+        **📚 Guía rápida:**
+        1. Escribe tu perfil profesional
+        2. (Opcional) Sube foto y QR
+        3. Haz clic en "Generar CV"
+        4. Descarga el HTML resultante
+        """)
 
+    # =========================================================================
+    # ÁREA PRINCIPAL - Entrada de datos
+    # =========================================================================
+    
     # Campo de texto para el brief del CV
     brief = st.text_area(
-        "Brief del CV",
-        height=320,
-        placeholder="Ejemplo: Perfil senior de analítica de datos con 8 años en retail, habilidades en SQL, Python, Power BI...",
+        "📝 Brief del CV",
+        height=BRIEF_TEXT_AREA_HEIGHT,
+        placeholder=MESSAGES["brief_placeholder"],
+        help="Describe tu perfil, experiencia, habilidades y objetivo profesional.",
     )
     
     # Sección de carga de imágenes (avatar y QR)
+    st.subheader("📷 Imágenes (opcional)")
     col_avatar, col_qr = st.columns(2)
+    
     with col_avatar:
         avatar_upload = st.file_uploader(
-            "Foto (opcional)",
-            type=["png", "jpg", "jpeg", "webp"],
+            "Foto de perfil",
+            type=SUPPORTED_IMAGE_EXTENSIONS,
             accept_multiple_files=False,
-            help="Se usará para reemplazar el avatar del template.",
+            help="Imagen cuadrada recomendada (400x400 px o mayor).",
             key="avatar_uploader",
         )
+        if avatar_upload:
+            st.image(avatar_upload, caption="Vista previa", width=150)
+    
     with col_qr:
         qr_upload = st.file_uploader(
-            "QR de LinkedIn (opcional)",
-            type=["png", "jpg", "jpeg", "webp"],
+            "Código QR (LinkedIn/Portfolio)",
+            type=SUPPORTED_IMAGE_EXTENSIONS,
             accept_multiple_files=False,
-            help="Se mostrará en el espacio del código QR.",
+            help="Código QR que enlace a tu perfil profesional.",
             key="qr_uploader",
         )
+        if qr_upload:
+            st.image(qr_upload, caption="Vista previa", width=100)
 
-    # Archivos adicionales de contexto
-    uploaded_files = st.file_uploader(
-        "Adjunta archivos de referencia (opcional)",
-        type=["png", "jpg", "jpeg", "webp", "pdf"],
-        accept_multiple_files=True,
-        help="Se enviarán como contexto adicional al modelo.",
-        key="context_files",
-    )
+    # Archivos adicionales de contexto (colapsable)
+    with st.expander("📎 Archivos de referencia adicionales", expanded=False):
+        uploaded_files = st.file_uploader(
+            "Adjunta documentos de apoyo",
+            type=SUPPORTED_CONTEXT_EXTENSIONS,
+            accept_multiple_files=True,
+            help="CVs anteriores, certificados, etc. Se usan como contexto.",
+            key="context_files",
+        )
+        if uploaded_files:
+            st.info(f"📁 {len(uploaded_files)} archivo(s) adjunto(s)")
+
+    # =========================================================================
+    # GENERACIÓN DEL CV
+    # =========================================================================
     
-    # Opción para incluir el color de acento en el prompt
-    include_accent_hint = st.checkbox(
-        "Incluir el color seleccionado en el prompt", value=True, help="Añade una instrucción explícita para cambiar --accent."
-    )
-
     # Botón para generar el CV
-    generate = st.button("Generar CV", type="primary")
+    col_btn, col_status = st.columns([1, 3])
+    with col_btn:
+        generate = st.button(MESSAGES["generate_button"], type="primary", use_container_width=True)
 
     # Proceso de generación cuando se presiona el botón
     if generate:
         # Validar que se haya ingresado un brief
         if not brief.strip():
-            st.warning("Ingresa un brief para generar el CV.")
+            st.warning(MESSAGES["brief_empty_warning"])
+            logger.warning("Intento de generación sin brief")
             return
 
-        # Obtener la API key
-        api_key = os.getenv(ENV_VAR_NAME)
+        # Validar API key
         if not api_key:
-            st.error("Define la API Key en el archivo .env o en la variable de entorno OPENAI_API_KEY.")
+            st.error(MESSAGES["api_key_missing"])
+            logger.error("API key no configurada")
             return
+
+        logger.info(f"Iniciando generación de CV - Modelo: {model}")
 
         # Convertir imágenes a Data URIs
         avatar_data_uri = file_to_data_uri(avatar_upload) if avatar_upload else None
@@ -545,40 +614,85 @@ def main() -> None:
         try:
             temp_paths = persist_uploaded_files(files_for_context)
             user_content = build_content(brief, accent, include_accent_hint, bool(avatar_upload), bool(qr_upload))
-            with st.spinner("Generando CV..."):
-                response = chat_completion(
-                    system_prompt=SYSTEM_PROMPT,
-                    user_content=user_content,
-                    files=temp_paths or None,
-                    model=model,
-                    max_output_tokens=max_tokens,
-                    api_key=api_key,
-                )
-        except Exception as exc:  # pragma: no cover - Streamlit handler
-            st.error(f"Error al generar el CV: {exc}")
+            
+            # Barra de progreso
+            progress_bar = st.progress(0, text=MESSAGES["generating"])
+            progress_bar.progress(30, text="🔄 Enviando solicitud a OpenAI...")
+            
+            response = chat_completion(
+                system_prompt=SYSTEM_PROMPT,
+                user_content=user_content,
+                files=temp_paths or None,
+                model=model,
+                max_output_tokens=max_tokens,
+                api_key=api_key,
+            )
+            
+            progress_bar.progress(80, text="📝 Procesando respuesta...")
+            
+            # Aplicar las imágenes al HTML
+            html_response = apply_image_overrides(response, avatar_data_uri, qr_data_uri)
+            st.session_state["cv_html"] = html_response
+            
+            progress_bar.progress(100, text="✅ ¡CV generado exitosamente!")
+            logger.info(f"CV generado exitosamente: {len(html_response):,} caracteres")
+            
+            # Limpiar la barra de progreso después de un momento
+            import time
+            time.sleep(1)
+            progress_bar.empty()
+            
+            st.success("✅ CV generado exitosamente. Revisa el resultado abajo.")
+            
+        except OpenAIClientError as exc:
+            st.error(MESSAGES["generation_error"].format(str(exc)))
+            logger.error(f"Error de cliente OpenAI: {exc}")
+            return
+        except Exception as exc:
+            st.error(MESSAGES["generation_error"].format(str(exc)))
+            logger.exception(f"Error inesperado durante la generación: {exc}")
             return
         finally:
             # Limpiar archivos temporales
             for path in temp_paths:
                 try:
                     os.unlink(path)
-                except OSError:
-                    pass
+                    logger.debug(f"Archivo temporal eliminado: {path}")
+                except OSError as e:
+                    logger.warning(f"No se pudo eliminar archivo temporal {path}: {e}")
 
-        # Aplicar las imágenes al HTML y guardar en sesión
-        html_response = apply_image_overrides(response, avatar_data_uri, qr_data_uri)
-        st.session_state["cv_html"] = html_response
-
-    # Mostrar el CV generado si existe en la sesión
+    # =========================================================================
+    # VISTA PREVIA Y DESCARGA
+    # =========================================================================
+    
     if "cv_html" in st.session_state:
         html = st.session_state["cv_html"]
+        
+        st.divider()
+        st.subheader("👁️ Vista Previa del CV")
+        
         # Vista previa del CV en un iframe
-        st.components.v1.html(html, height=900, scrolling=True)
-        # Botón para descargar el HTML
-        st.download_button("Descargar HTML", data=html, file_name="cv.html", mime="text/html")
-        # Botón para limpiar el resultado
-        if st.button("Limpiar resultado"):
-            st.session_state.pop("cv_html", None)
+        st.components.v1.html(html, height=PREVIEW_IFRAME_HEIGHT, scrolling=True)
+        
+        # Botones de acción
+        col_download, col_clear, col_info = st.columns([1, 1, 2])
+        
+        with col_download:
+            st.download_button(
+                MESSAGES["download_button"],
+                data=html,
+                file_name="cv.html",
+                mime="text/html",
+                use_container_width=True,
+            )
+        
+        with col_clear:
+            if st.button(MESSAGES["clear_button"], use_container_width=True):
+                st.session_state.pop("cv_html", None)
+                st.rerun()
+        
+        with col_info:
+            st.caption(f"📄 Tamaño del HTML: {len(html):,} caracteres")
 
 
 if __name__ == "__main__":

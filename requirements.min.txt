@@ -1,0 +1,27 @@
+# =============================================================================
+# Dependencias mínimas para el Generador de CV HTML
+# =============================================================================
+# Este archivo contiene solo las dependencias necesarias para ejecutar
+# la aplicación. Usar para instalación con pip en entornos limpios.
+#
+# Instalación: pip install -r requirements.min.txt
+# =============================================================================
+
+# Framework web para la interfaz de usuario
+streamlit>=1.51.0
+
+# Cliente oficial de OpenAI para acceso a la API
+openai>=1.109.0
+
+# Procesamiento de imágenes (redimensionado, conversión)
+pillow>=12.0.0
+
+# Gestión de variables de entorno desde archivo .env
+python-dotenv>=1.0.0
+
+# =============================================================================
+# Dependencias de desarrollo (opcional)
+# =============================================================================
+
+# Framework de testing
+pytest>=7.0.0

@@ -1,70 +1,111 @@
-# === Archivos del sistema ===
-.DS_Store
-Thumbs.db
-
-# === Entornos virtuales ===
-venv/
-env/
-.venv/
-ENV/
-
-# === Archivos de configuración local ===
-*.env
+# =============================================================================
+# Archivos de entorno y configuración sensible
+# =============================================================================
 .env
-*.local
-*.ini
-*.cfg
+.env.local
+.env.*.local
 
-# === Archivos de logs y temporales ===
-*.log
-*.tmp
-*.bak
-*.swp
-*.swo
-*.orig
+# =============================================================================
+# Python
+# =============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
-
-# === Carpetas de compilación ===
+*.so
+.Python
 build/
+develop-eggs/
 dist/
-*.egg-info/
+downloads/
+eggs/
 .eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# === IDEs y editores ===
+# =============================================================================
+# Entornos virtuales
+# =============================================================================
+.venv/
+venv/
+ENV/
+env/
+
+# =============================================================================
+# IDEs y editores
+# =============================================================================
 .vscode/
 .idea/
-.spyderproject
-.spyproject
-*.sublime-project
-*.sublime-workspace
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
 
-# === Archivos de pruebas ===
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-nosetests.xml
-coverage.xml
-*.cover
-.cache
+# =============================================================================
+# Jupyter Notebooks
+# =============================================================================
+.ipynb_checkpoints/
+*.ipynb
 
-# === Archivos de Jupyter Notebooks ===
-.ipynb_checkpoints
-
-# === Archivos de dependencias ===
-Pipfile.lock
-poetry.lock
-
-# === Archivos del sistema operativo ===
+# =============================================================================
+# Archivos de sistema
+# =============================================================================
+.DS_Store
+Thumbs.db
 desktop.ini
 
-# === Archivos de control de versiones secundarios ===
-*.orig
-*.rej
+# =============================================================================
+# Archivos temporales
+# =============================================================================
+*.tmp
+*.temp
+*.log
+*.bak
 
-# === Archivos de datos temporales ===
-data/raw/
-data/tmp/
-data/temp/
+# =============================================================================
+# Archivos personales y de prueba (no subir al repositorio)
+# =============================================================================
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.webp
+
+# Excepciones: archivos que SÍ queremos incluir
+!README.md
+
+# =============================================================================
+# Archivos de caché y datos locales
+# =============================================================================
+.cache/
+*.cache
+
+# =============================================================================
+# Archivos de cobertura de tests
+# =============================================================================
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# =============================================================================
+# Archivos generados
+# =============================================================================
+CV.html
+cv.html
+
+# =============================================================================
+# Conda
+# =============================================================================
+conda_requirements.txt
