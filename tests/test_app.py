@@ -23,6 +23,9 @@ from app import (
     persist_uploaded_files,
     file_to_data_uri,
     apply_image_overrides,
+    load_system_prompt,
+    validate_html_response,
+    validate_accent_color,
 )
 
 
@@ -238,3 +241,87 @@ class TestApplyImageOverrides:
         # Debería haber un reemplazo y uno sin cambiar
         assert result.count("data:image/png;base64,NEW") == 1
         assert result.count('src="avatar.png"') == 1
+
+
+class TestValidateHtmlResponse:
+    """Tests para la función validate_html_response."""
+    
+    def test_valid_html(self):
+        """Retorna True para HTML válido con DOCTYPE."""
+        html = "<!DOCTYPE html><html><head></head><body></body></html>"
+        assert validate_html_response(html) is True
+    
+    def test_valid_html_with_whitespace(self):
+        """Retorna True para HTML con espacios en blanco al inicio."""
+        html = "   \n\n<!DOCTYPE html><html><head></head><body></body></html>"
+        assert validate_html_response(html) is True
+    
+    def test_valid_html_case_insensitive(self):
+        """Retorna True independientemente de mayúsculas/minúsculas."""
+        html = "<!doctype HTML><html><head></head><body></body></html>"
+        assert validate_html_response(html) is True
+    
+    def test_invalid_html_no_doctype(self):
+        """Retorna False para HTML sin DOCTYPE."""
+        html = "<html><head></head><body></body></html>"
+        assert validate_html_response(html) is False
+    
+    def test_invalid_empty_string(self):
+        """Retorna False para string vacío."""
+        assert validate_html_response("") is False
+    
+    def test_invalid_none(self):
+        """Retorna False para None (aunque no debería recibir None)."""
+        assert validate_html_response(None) is False
+    
+    def test_invalid_text_response(self):
+        """Retorna False para respuesta de texto que no es HTML."""
+        assert validate_html_response("Lo siento, no puedo generar el CV.") is False
+
+
+class TestValidateAccentColor:
+    """Tests para la función validate_accent_color."""
+    
+    def test_valid_color_lowercase(self):
+        """Retorna True para color hexadecimal válido en minúsculas."""
+        assert validate_accent_color("#0b3a6e") is True
+    
+    def test_valid_color_uppercase(self):
+        """Retorna True para color hexadecimal válido en mayúsculas."""
+        assert validate_accent_color("#0B3A6E") is True
+    
+    def test_valid_color_mixed_case(self):
+        """Retorna True para color hexadecimal con mayúsculas mezcladas."""
+        assert validate_accent_color("#AbCdEf") is True
+    
+    def test_invalid_color_no_hash(self):
+        """Retorna False para color sin #."""
+        assert validate_accent_color("0b3a6e") is False
+    
+    def test_invalid_color_short(self):
+        """Retorna False para color demasiado corto."""
+        assert validate_accent_color("#fff") is False
+    
+    def test_invalid_color_too_long(self):
+        """Retorna False para color demasiado largo."""
+        assert validate_accent_color("#0b3a6e00") is False
+    
+    def test_invalid_color_non_hex(self):
+        """Retorna False para caracteres no hexadecimales."""
+        assert validate_accent_color("#ghijkl") is False
+    
+    def test_invalid_empty_string(self):
+        """Retorna False para string vacío."""
+        assert validate_accent_color("") is False
+
+
+class TestLoadSystemPrompt:
+    """Tests para la función load_system_prompt."""
+    
+    def test_loads_prompt_successfully(self):
+        """Carga el prompt del sistema correctamente."""
+        prompt = load_system_prompt()
+        # Verificar que se cargó contenido
+        assert len(prompt) > 0
+        # Verificar que contiene contenido esperado
+        assert "HTML" in prompt or "CV" in prompt

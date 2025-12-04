@@ -127,6 +127,127 @@ class TestCreateOpenAIClient:
                 assert call_kwargs["api_key"] == "sk-env-key-67890"
 
 
+class TestResizeImageBytes:
+    """Tests para la función _resize_image_bytes."""
+    
+    def test_small_image_not_resized(self):
+        """Una imagen pequeña no se redimensiona."""
+        # Crear una imagen pequeña de prueba
+        from PIL import Image
+        import io
+        
+        img = Image.new('RGB', (100, 100), color='red')
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+            img.save(f, format='PNG')
+            temp_path = f.name
+        
+        try:
+            result = _resize_image_bytes(temp_path, max_side=2048)
+            assert isinstance(result, bytes)
+            assert len(result) > 0
+            
+            # Verificar que la imagen resultante no excede el tamaño máximo
+            result_img = Image.open(io.BytesIO(result))
+            assert max(result_img.size) <= 2048
+        finally:
+            os.unlink(temp_path)
+    
+    def test_large_image_resized(self):
+        """Una imagen grande se redimensiona correctamente."""
+        from PIL import Image
+        import io
+        
+        # Crear una imagen grande
+        img = Image.new('RGB', (4000, 3000), color='blue')
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+            img.save(f, format='PNG')
+            temp_path = f.name
+        
+        try:
+            result = _resize_image_bytes(temp_path, max_side=1024)
+            result_img = Image.open(io.BytesIO(result))
+            
+            # Verificar que se redimensionó correctamente
+            assert max(result_img.size) <= 1024
+            # Verificar que mantiene la proporción
+            assert result_img.size[0] == 1024 or result_img.size[1] == 1024
+        finally:
+            os.unlink(temp_path)
+    
+    def test_invalid_image_raises_error(self):
+        """Lanza FileProcessingError con archivo no válido."""
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+            f.write(b"not a valid image")
+            temp_path = f.name
+        
+        try:
+            with pytest.raises(FileProcessingError):
+                _resize_image_bytes(temp_path)
+        finally:
+            os.unlink(temp_path)
+
+
+class TestExecuteWithRetry:
+    """Tests para la función _execute_with_retry."""
+    
+    def test_success_on_first_try(self):
+        """Retorna resultado si la primera ejecución es exitosa."""
+        from openai_client import _execute_with_retry
+        
+        mock_func = MagicMock(return_value="success")
+        result = _execute_with_retry(mock_func, max_retries=3)
+        
+        assert result == "success"
+        mock_func.assert_called_once()
+    
+    def test_retries_on_rate_limit(self):
+        """Reintenta con backoff en rate limit."""
+        from openai_client import _execute_with_retry
+        from openai import RateLimitError
+        
+        # Simular que falla 2 veces y luego tiene éxito
+        mock_func = MagicMock(side_effect=[
+            RateLimitError("Rate limit", response=MagicMock(), body=None),
+            RateLimitError("Rate limit", response=MagicMock(), body=None),
+            "success"
+        ])
+        
+        with patch('openai_client.time.sleep'):  # No esperar realmente
+            result = _execute_with_retry(mock_func, max_retries=3)
+        
+        assert result == "success"
+        assert mock_func.call_count == 3
+    
+    def test_raises_after_max_retries(self):
+        """Lanza excepción después de máximo de reintentos."""
+        from openai_client import _execute_with_retry
+        from openai import RateLimitError
+        
+        mock_func = MagicMock(side_effect=RateLimitError(
+            "Rate limit", response=MagicMock(), body=None
+        ))
+        
+        with patch('openai_client.time.sleep'):
+            with pytest.raises(RateLimitError):
+                _execute_with_retry(mock_func, max_retries=2)
+        
+        assert mock_func.call_count == 3  # Intento inicial + 2 reintentos
+    
+    def test_api_error_not_retried(self):
+        """Los errores de API genéricos no se reintentan."""
+        from openai_client import _execute_with_retry
+        from openai import APIError
+        
+        mock_func = MagicMock(side_effect=APIError(
+            "API Error", request=MagicMock(), body=None
+        ))
+        
+        with pytest.raises(APIError):
+            _execute_with_retry(mock_func, max_retries=3)
+        
+        mock_func.assert_called_once()
+
+
 class TestCustomExceptions:
     """Tests para las excepciones personalizadas."""
     

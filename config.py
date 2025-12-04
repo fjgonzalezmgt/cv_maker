@@ -86,6 +86,23 @@ LOG_LEVEL: str = "INFO"
 LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 # =============================================================================
+# CONFIGURACIÓN DE VALIDACIÓN
+# =============================================================================
+
+# Longitud máxima del brief en caracteres
+MAX_BRIEF_LENGTH: int = 15000
+
+# Patrón de validación de color hexadecimal
+HEX_COLOR_PATTERN: str = r"^#[0-9A-Fa-f]{6}$"
+
+# =============================================================================
+# RUTAS DE ARCHIVOS
+# =============================================================================
+
+# Ruta al archivo del prompt del sistema
+SYSTEM_PROMPT_PATH: str = "prompts/system_prompt.md"
+
+# =============================================================================
 # MENSAJES DE UI
 # =============================================================================
 
@@ -94,9 +111,16 @@ MESSAGES = {
     "api_key_missing": "❌ No se encontró OPENAI_API_KEY en el entorno ni en el archivo .env.",
     "brief_placeholder": "Ejemplo: Perfil senior de analítica de datos con 8 años en retail, habilidades en SQL, Python, Power BI...",
     "brief_empty_warning": "⚠️ Ingresa un brief para generar el CV.",
+    "brief_too_long_warning": "⚠️ El brief es demasiado largo. Máximo {} caracteres.",
+    "invalid_color_warning": "⚠️ Color de acento inválido. Usa formato hexadecimal (#RRGGBB).",
+    "invalid_html_warning": "⚠️ La respuesta del modelo no es HTML válido. Intenta de nuevo.",
     "generating": "🔄 Generando CV...",
     "generation_error": "❌ Error al generar el CV: {}",
+    "rate_limit_error": "⏳ Demasiadas solicitudes. Por favor espera un momento e intenta de nuevo.",
+    "connection_error": "🌐 Error de conexión. Verifica tu conexión a internet.",
+    "timeout_error": "⏱️ La solicitud tardó demasiado. Intenta con un brief más corto o menos archivos.",
     "download_button": "📥 Descargar HTML",
     "clear_button": "🗑️ Limpiar resultado",
     "generate_button": "🚀 Generar CV",
+    "prompt_load_error": "❌ No se pudo cargar el prompt del sistema: {}",
 }

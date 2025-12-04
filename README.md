@@ -4,7 +4,7 @@
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.51-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-412991?style=for-the-badge&logo=openai&logoColor=white)
 ![License](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Tests-pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-76%20passed-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)
 
 ![Pandas](https://img.shields.io/badge/Pandas-2.3-150458?style=flat-square&logo=pandas&logoColor=white)
 ![Pillow](https://img.shields.io/badge/Pillow-12.0-3776AB?style=flat-square&logo=python&logoColor=white)
@@ -31,7 +31,10 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 - **Compatibilidad con múltiples modelos OpenAI:** configurable entre `gpt-4.1-mini`, `gpt-4.1`, `gpt-4o-mini`, y `gpt-4o`.
 - **Configuración centralizada:** todas las constantes y parámetros en un solo archivo `config.py`.
 - **Manejo robusto de errores:** reintentos automáticos con backoff exponencial para la API de OpenAI.
-- **Suite de pruebas:** tests unitarios con pytest para garantizar la calidad del código.
+- **Suite de pruebas:** 76 tests unitarios con pytest para garantizar la calidad del código.
+- **Validación de entradas:** validación de colores hexadecimales y longitud del brief.
+- **Validación de salidas:** verificación de estructura HTML válida en las respuestas.
+- **Prompt externo:** sistema de prompts modular y mantenible en archivos separados.
 
 ---
 
@@ -41,17 +44,20 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 ├── app.py                    # Interfaz principal con Streamlit
 ├── openai_client.py          # Módulo de conexión y llamada a la API de OpenAI
 ├── config.py                 # Configuración centralizada del proyecto
+├── prompts/                  # Directorio de prompts del sistema
+│   └── system_prompt.md      # Prompt principal para generación de CVs
 ├── environment.yml           # Archivo para crear el entorno Conda
 ├── requirements.txt          # Dependencias completas (pip freeze)
 ├── requirements.min.txt      # Dependencias mínimas
 ├── conda_requirements.txt    # Dependencias para Conda
-├── convert_requirements.py   # Script para convertir requirements
 ├── pytest.ini                # Configuración de pytest
 ├── ui.bat                    # Script de inicio rápido (Windows)
 ├── CV.html                   # Ejemplo de CV generado
+├── CHANGELOG.md              # Historial de cambios del proyecto
 ├── .env.example              # Ejemplo de archivo de configuración de la API Key
+├── .gitignore                # Archivos ignorados por Git
 ├── README.md                 # Este archivo
-└── tests/                    # Suite de pruebas unitarias
+└── tests/                    # Suite de pruebas unitarias (76 tests)
     ├── __init__.py
     ├── test_app.py           # Tests de la aplicación principal
     ├── test_config.py        # Tests de configuración
@@ -61,10 +67,10 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 ### Descripción de archivos principales
 
 - **app.py:**  
-  Define la interfaz, la lógica principal y la integración con OpenAI. Gestiona cargas de archivos, configuración del modelo y renderizado del HTML generado.
+  Define la interfaz, la lógica principal y la integración con OpenAI. Gestiona cargas de archivos, configuración del modelo y renderizado del HTML generado. Incluye validación de entradas (colores, longitud de brief) y manejo de archivos temporales con context managers.
 
 - **openai_client.py:**  
-  Contiene las funciones auxiliares de conexión con la API de OpenAI. Procesa imágenes y PDFs, y maneja la llamada a la API con los mensajes estructurados en el formato esperado por la **Responses API**. Incluye reintentos automáticos con backoff exponencial para errores de rate limit y conexión.
+  Contiene las funciones auxiliares de conexión con la API de OpenAI. Procesa imágenes y PDFs, y maneja la llamada a la API con los mensajes estructurados en el formato esperado por la **Responses API**. Incluye reintentos automáticos con backoff exponencial para errores de rate limit, timeout y conexión.
 
 - **config.py:**  
   Configuración centralizada del proyecto que incluye:
@@ -73,6 +79,11 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
   - Parámetros de UI (colores, dimensiones)
   - Configuración de logging
   - Mensajes de interfaz
+  - Constantes de validación (longitud máxima de brief, patrones de color)
+  - Rutas de archivos del sistema (prompts)
+
+- **prompts/system_prompt.md:**  
+  Archivo externo que contiene el prompt del sistema para la generación de CVs. Permite modificar las instrucciones de generación sin tocar el código Python.
 
 - **environment.yml:**  
   Permite crear un entorno Conda con todas las dependencias necesarias para ejecutar la aplicación.
@@ -143,7 +154,7 @@ ui.bat
 
 ## 🧪 Pruebas
 
-El proyecto incluye una suite de pruebas unitarias con pytest:
+El proyecto incluye una suite completa de **76 pruebas unitarias** con pytest:
 
 ```bash
 # Ejecutar todas las pruebas
@@ -157,6 +168,14 @@ pytest tests/test_app.py -v
 pytest tests/test_openai_client.py -v
 pytest tests/test_config.py -v
 ```
+
+### Cobertura de tests
+
+| Módulo | Tests | Descripción |
+|--------|-------|-------------|
+| `test_app.py` | 45+ | Interfaz, validaciones, carga de prompts |
+| `test_openai_client.py` | 25+ | Cliente API, reintentos, procesamiento de imágenes |
+| `test_config.py` | 6 | Configuración y constantes |
 
 ---
 
@@ -186,13 +205,22 @@ Puedes ver un ejemplo real generado con esta aplicación en el siguiente enlace:
                         │   config.py     │     │  OpenAI API     │
                         │ (Configuración) │     │  (GPT-4/4o)     │
                         └─────────────────┘     └─────────────────┘
+                               │
+                               ▼
+                        ┌─────────────────┐
+                        │    prompts/     │
+                        │ (System Prompt) │
+                        └─────────────────┘
 ```
 
 1. El usuario ingresa los datos mediante Streamlit.  
-2. `app.py` genera el *prompt* del sistema (`SYSTEM_PROMPT`) con reglas estrictas sobre estructura y estilo.  
-3. `config.py` proporciona los parámetros de configuración centralizados.
-4. `openai_client.py` convierte los archivos subidos en objetos adecuados (`input_image` o `input_file`) y los envía junto al texto al modelo seleccionado.  
-5. El modelo devuelve un HTML completo que se renderiza directamente en la app y puede descargarse.  
+2. `app.py` carga el prompt del sistema desde `prompts/system_prompt.md` con las reglas estrictas de estructura y estilo.
+3. Se validan las entradas (color hexadecimal, longitud del brief).
+4. `config.py` proporciona los parámetros de configuración centralizados.
+5. `openai_client.py` convierte los archivos subidos en objetos adecuados (`input_image` o `input_file`) y los envía junto al texto al modelo seleccionado.  
+6. El cliente implementa reintentos automáticos con backoff exponencial para errores de rate limit, timeout y conexión.
+7. Se valida que la respuesta contenga HTML válido.
+8. El modelo devuelve un HTML completo que se renderiza directamente en la app y puede descargarse.  
 
 ---
 
@@ -210,12 +238,24 @@ Puedes ver un ejemplo real generado con esta aplicación en el siguiente enlace:
 ### Parámetros configurables (config.py)
 
 ```python
+# Tokens y modelo
 DEFAULT_MAX_TOKENS = 6000    # Tokens de respuesta
 MIN_TOKENS = 1024            # Mínimo configurable
 MAX_TOKENS = 8000            # Máximo configurable
 DEFAULT_TEMPERATURE = 0.2    # Creatividad del modelo
+
+# API y conexión
 API_TIMEOUT = 120.0          # Timeout en segundos
+MAX_RETRIES = 3              # Reintentos máximos
+INITIAL_RETRY_DELAY = 1.0    # Delay inicial (segundos)
 MAX_FILE_BYTES = 8_000_000   # Tamaño máximo de archivos (8 MB)
+
+# Validación
+MAX_BRIEF_LENGTH = 15000     # Longitud máxima del brief
+HEX_COLOR_PATTERN = r"^#[0-9A-Fa-f]{6}$"  # Patrón de color válido
+
+# Rutas
+SYSTEM_PROMPT_PATH = "prompts/system_prompt.md"  # Ubicación del prompt
 ```
 
 ---
@@ -233,11 +273,26 @@ MAX_FILE_BYTES = 8_000_000   # Tamaño máximo de archivos (8 MB)
 
 Puedes adaptar este proyecto para:
 
-- Usar otros templates HTML o temas visuales modificando el `SYSTEM_PROMPT` en `app.py`.
+- Usar otros templates HTML o temas visuales modificando el archivo `prompts/system_prompt.md`.
 - Cambiar el idioma o tono ajustando las instrucciones del sistema.
 - Modificar los colores y parámetros de UI en `config.py`.
 - Añadir nuevos modelos de OpenAI actualizando `AVAILABLE_MODELS`.
+- Ajustar los parámetros de validación (longitud máxima de brief, patrones de color).
 - Integrarlo con bases de datos, portales de empleo o generadores de portafolio.
+
+---
+
+## 📋 Historial de cambios
+
+Consulta el archivo [CHANGELOG.md](CHANGELOG.md) para ver el historial completo de cambios del proyecto.
+
+### Última versión: v1.1.0
+
+- Extracción del system prompt a archivo externo
+- Validación de entradas (color hexadecimal, longitud de brief)
+- Manejo mejorado de errores con mensajes específicos
+- Context managers para archivos temporales
+- 76 tests unitarios con cobertura completa
 
 ---
 
@@ -245,7 +300,7 @@ Puedes adaptar este proyecto para:
 
 **Francisco González**  
 Quality Analytics  
-Noviembre 2025
+Diciembre 2025
 
 ---
 
