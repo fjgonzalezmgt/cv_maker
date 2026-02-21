@@ -146,7 +146,7 @@ def temp_uploaded_files(files: list):
                 logger.warning(f"No se pudo eliminar archivo temporal {path}: {e}")
 
 
-def build_content(brief: str, accent: str, include_accent_hint: bool, has_avatar: bool, has_qr: bool) -> str:
+def build_content(brief: str, accent: str, include_accent_hint: bool, has_avatar: bool, has_qr: bool, target_position: str = "") -> str:
     """
     Construye el contenido del prompt para el modelo de IA.
     
@@ -159,15 +159,19 @@ def build_content(brief: str, accent: str, include_accent_hint: bool, has_avatar
         include_accent_hint: Si se debe incluir la instrucción del color en el prompt
         has_avatar: Indica si se proporcionó una foto de perfil
         has_qr: Indica si se proporcionó un código QR
+        target_position: Puesto al que se orienta el CV (opcional)
         
     Returns:
         String con el prompt completo para enviar al modelo
         
     Example:
-        >>> build_content("Analista de datos con 5 años...", "#0b3a6e", True, True, False)
-        'Analista de datos con 5 años...\\n\\nColor de acento preferido: #0b3a6e...'
+        >>> build_content("Analista de datos con 5 años...", "#0b3a6e", True, True, False, "Data Analyst")
+        'Enfoca el CV para el puesto: Data Analyst\n\nAnalista de datos...
     """
-    parts = [brief.strip()]
+    parts = []
+    if target_position.strip():
+        parts.append(f"Enfoca el CV para el puesto: {target_position.strip()}")
+    parts.append(brief.strip())
     if include_accent_hint and accent:
         parts.append(f"Color de acento preferido: {accent}")
     if has_avatar:
@@ -334,6 +338,12 @@ def main() -> None:
     # =========================================================================
     
     # Campo de texto para el brief del CV
+    target_position = st.text_input(
+        "🎯 Puesto objetivo",
+        placeholder="Ej: Data Analyst, Product Manager, Software Engineer...",
+        help="Indica el puesto al que quieres orientar tu CV. El modelo priorizará las habilidades y experiencia más relevantes para ese rol.",
+    )
+
     brief = st.text_area(
         "📝 Brief del CV",
         height=BRIEF_TEXT_AREA_HEIGHT,
@@ -437,7 +447,7 @@ def main() -> None:
         # Generar el CV usando el modelo de OpenAI
         try:
             with temp_uploaded_files(files_for_context) as temp_paths:
-                user_content = build_content(brief, accent, include_accent_hint, bool(avatar_upload), bool(qr_upload))
+                user_content = build_content(brief, accent, include_accent_hint, bool(avatar_upload), bool(qr_upload), target_position)
                 
                 # Barra de progreso
                 progress_bar = st.progress(0, text=MESSAGES["generating"])
