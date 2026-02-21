@@ -34,40 +34,24 @@ import base64
 import logging
 import mimetypes
 import os
+import re
 import tempfile
+import time as time_module
+from contextlib import contextmanager
 from pathlib import Path
 from typing import List, Optional
 
-import re
-import time as time_module
-from contextlib import contextmanager
-
 import streamlit as st
 from dotenv import load_dotenv
-from openai import RateLimitError, APIConnectionError, APITimeoutError
+from openai import APIConnectionError, APITimeoutError, RateLimitError
 
-from openai_client import chat_completion, OpenAIClientError
-from config import (
-    ENV_VAR_API_KEY,
-    DEFAULT_MODEL,
-    AVAILABLE_MODELS,
-    DEFAULT_ACCENT_COLOR,
-    DEFAULT_MAX_TOKENS,
-    MIN_TOKENS,
-    MAX_TOKENS,
-    TOKEN_STEP,
-    PAGE_TITLE,
-    BRIEF_TEXT_AREA_HEIGHT,
-    PREVIEW_IFRAME_HEIGHT,
-    SUPPORTED_IMAGE_EXTENSIONS,
-    SUPPORTED_CONTEXT_EXTENSIONS,
-    MESSAGES,
-    LOG_LEVEL,
-    LOG_FORMAT,
-    MAX_BRIEF_LENGTH,
-    HEX_COLOR_PATTERN,
-    SYSTEM_PROMPT_PATH,
-)
+from config import (AVAILABLE_MODELS, BRIEF_TEXT_AREA_HEIGHT,
+                    DEFAULT_ACCENT_COLOR, DEFAULT_MODEL, ENV_VAR_API_KEY,
+                    HEX_COLOR_PATTERN, LOG_FORMAT, LOG_LEVEL, MAX_BRIEF_LENGTH,
+                    MESSAGES, PAGE_TITLE, PREVIEW_IFRAME_HEIGHT,
+                    SUPPORTED_CONTEXT_EXTENSIONS, SUPPORTED_IMAGE_EXTENSIONS,
+                    SYSTEM_PROMPT_PATH)
+from openai_client import OpenAIClientError, chat_completion
 
 # Configurar logging
 logging.basicConfig(level=getattr(logging, LOG_LEVEL), format=LOG_FORMAT)
@@ -327,16 +311,6 @@ def main() -> None:
             help="Color principal para títulos y acentos del CV.",
         )
         
-        # Tokens máximos
-        max_tokens = st.slider(
-            "📊 Tokens máximos",
-            min_value=MIN_TOKENS,
-            max_value=MAX_TOKENS,
-            value=DEFAULT_MAX_TOKENS,
-            step=TOKEN_STEP,
-            help="Límite de tokens para la respuesta del modelo.",
-        )
-        
         # Opción para incluir el color de acento en el prompt
         include_accent_hint = st.checkbox(
             "Incluir color en el prompt",
@@ -468,7 +442,14 @@ def main() -> None:
                 # Barra de progreso
                 progress_bar = st.progress(0, text=MESSAGES["generating"])
                 progress_bar.progress(30, text="🔄 Enviando solicitud a OpenAI...")
-                
+
+                logger.info(
+                    f"Enviando información a la API - "
+                    f"modelo: {model}, "
+                    f"archivos adjuntos: {len(files_for_context)}, "
+                    f"longitud del brief: {len(brief):,} caracteres"
+                )
+
                 # Medir tiempo de respuesta
                 start_time = time_module.time()
                 
@@ -477,12 +458,11 @@ def main() -> None:
                     user_content=user_content,
                     files=temp_paths or None,
                     model=model,
-                    max_output_tokens=max_tokens,
                     api_key=api_key,
                 )
                 
                 elapsed_time = time_module.time() - start_time
-                logger.info(f"Tiempo de respuesta de OpenAI: {elapsed_time:.2f}s")
+                logger.info(f"Respuesta exitosa de la API de OpenAI - tiempo: {elapsed_time:.2f}s")
                 
                 progress_bar.progress(80, text="📝 Procesando respuesta...")
                 
@@ -503,28 +483,40 @@ def main() -> None:
                 # Limpiar la barra de progreso después de un momento
                 time_module.sleep(1)
                 progress_bar.empty()
-                
+
                 st.success("✅ CV generado exitosamente. Revisa el resultado abajo.")
+                with col_status:
+                    st.success("✅ API respondió exitosamente")
                 
         except RateLimitError as exc:
+            logger.error(f"Respuesta fallida de la API de OpenAI - Rate limit excedido: {exc}")
             st.error(MESSAGES["rate_limit_error"])
-            logger.error(f"Rate limit error: {exc}")
+            with col_status:
+                st.error("❌ API respondió con error: rate limit excedido")
             return
         except APIConnectionError as exc:
+            logger.error(f"Respuesta fallida de la API de OpenAI - Error de conexión: {exc}")
             st.error(MESSAGES["connection_error"])
-            logger.error(f"Connection error: {exc}")
+            with col_status:
+                st.error("❌ API respondió con error: fallo de conexión")
             return
         except APITimeoutError as exc:
+            logger.error(f"Respuesta fallida de la API de OpenAI - Timeout: {exc}")
             st.error(MESSAGES["timeout_error"])
-            logger.error(f"Timeout error: {exc}")
+            with col_status:
+                st.error("❌ API respondió con error: timeout")
             return
         except OpenAIClientError as exc:
+            logger.error(f"Respuesta fallida de la API de OpenAI - Error del cliente: {exc}")
             st.error(MESSAGES["generation_error"].format(str(exc)))
-            logger.error(f"Error de cliente OpenAI: {exc}")
+            with col_status:
+                st.error("❌ API respondió con error")
             return
         except Exception as exc:
+            logger.exception(f"Respuesta fallida de la API de OpenAI - Error inesperado: {exc}")
             st.error(MESSAGES["generation_error"].format(str(exc)))
-            logger.exception(f"Error inesperado durante la generación: {exc}")
+            with col_status:
+                st.error("❌ API respondió con error inesperado")
             return
 
     # =========================================================================

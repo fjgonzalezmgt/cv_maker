@@ -18,10 +18,11 @@ from typing import List
 ENV_VAR_API_KEY: str = "OPENAI_API_KEY"
 
 # Modelo predeterminado de OpenAI
-DEFAULT_MODEL: str = "gpt-4.1-mini"
+DEFAULT_MODEL: str = "gpt-5.2"
 
 # Modelos disponibles para selección
 AVAILABLE_MODELS: List[str] = [
+    "gpt-5.2",
     "gpt-4.1-mini",
     "gpt-4.1",
     "gpt-4o-mini",

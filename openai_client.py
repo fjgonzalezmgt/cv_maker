@@ -19,20 +19,12 @@ import os
 import time
 from typing import Any, Dict, Iterable, List, Optional, Union
 
-from openai import OpenAI, APIError, RateLimitError, APIConnectionError
+from openai import APIConnectionError, APIError, OpenAI, RateLimitError
 from PIL import Image
 
-from config import (
-    ENV_VAR_API_KEY,
-    MAX_FILE_BYTES,
-    MAX_IMAGE_SIDE,
-    JPEG_QUALITY,
-    DEFAULT_MODEL,
-    DEFAULT_TEMPERATURE,
-    API_TIMEOUT,
-    LOG_LEVEL,
-    LOG_FORMAT,
-)
+from config import (API_TIMEOUT, DEFAULT_MODEL, DEFAULT_TEMPERATURE,
+                    ENV_VAR_API_KEY, JPEG_QUALITY, LOG_FORMAT, LOG_LEVEL,
+                    MAX_FILE_BYTES, MAX_IMAGE_SIDE)
 
 # Configurar logging
 logging.basicConfig(level=getattr(logging, LOG_LEVEL), format=LOG_FORMAT)
@@ -419,13 +411,21 @@ def chat_completion(
         return _gen()
     
     # Solicitud sin streaming
-    logger.info("Realizando solicitud a OpenAI API")
-    
+    logger.info(
+        f"Enviando información a la API de OpenAI - "
+        f"modelo: {model}, "
+        f"archivos adjuntos: {len(files) if files else 0}, "
+        f"caracteres de texto: {len(user_text):,}"
+    )
+
     def _make_request():
         return openai_api.responses.create(**api_params)
-    
-    resp = _execute_with_retry(_make_request)
-    output = (getattr(resp, "output_text", "") or "").strip()
-    
-    logger.info(f"Respuesta recibida: {len(output):,} caracteres")
-    return output
+
+    try:
+        resp = _execute_with_retry(_make_request)
+        output = (getattr(resp, "output_text", "") or "").strip()
+        logger.info(f"Respuesta exitosa de la API de OpenAI - {len(output):,} caracteres recibidos")
+        return output
+    except Exception:
+        logger.error("Respuesta fallida de la API de OpenAI")
+        raise
