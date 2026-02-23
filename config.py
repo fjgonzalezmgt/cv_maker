@@ -112,6 +112,7 @@ MESSAGES = {
     "api_key_missing": "❌ No se encontró OPENAI_API_KEY en el entorno ni en el archivo .env.",
     "brief_placeholder": "Ejemplo: Perfil senior de analítica de datos con 8 años en retail, habilidades en SQL, Python, Power BI...",
     "brief_empty_warning": "⚠️ Ingresa un brief para generar el CV.",
+    "brief_or_files_required": "⚠️ Debes ingresar un brief o adjuntar al menos un documento de referencia.",
     "brief_too_long_warning": "⚠️ El brief es demasiado largo. Máximo {} caracteres.",
     "invalid_color_warning": "⚠️ Color de acento inválido. Usa formato hexadecimal (#RRGGBB).",
     "invalid_html_warning": "⚠️ La respuesta del modelo no es HTML válido. Intenta de nuevo.",

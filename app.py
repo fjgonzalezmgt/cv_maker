@@ -171,7 +171,8 @@ def build_content(brief: str, accent: str, include_accent_hint: bool, has_avatar
     parts = []
     if target_position.strip():
         parts.append(f"Enfoca el CV para el puesto: {target_position.strip()}")
-    parts.append(brief.strip())
+    if brief.strip():
+        parts.append(brief.strip())
     if include_accent_hint and accent:
         parts.append(f"Color de acento preferido: {accent}")
     if has_avatar:
@@ -281,7 +282,8 @@ def main() -> None:
     # Título y descripción
     st.title("🎯 Generador de CV HTML con OpenAI")
     st.markdown(
-        """Escribe un **brief** con tu perfil, experiencia y objetivos profesionales. 
+        """Escribe un **brief** con tu perfil, experiencia y objetivos profesionales, 
+        o adjunta documentos de apoyo (el brief es opcional si subes documentos de referencia). 
         El modelo generará un CV HTML profesional listo para imprimir."""
     )
 
@@ -348,7 +350,7 @@ def main() -> None:
         "📝 Brief del CV",
         height=BRIEF_TEXT_AREA_HEIGHT,
         placeholder=MESSAGES["brief_placeholder"],
-        help="Describe tu perfil, experiencia, habilidades y objetivo profesional.",
+        help="Describe tu perfil, experiencia, habilidades y objetivo profesional. Opcional si adjuntas documentos de apoyo en la sección de archivos de referencia.",
     )
     
     # Sección de carga de imágenes (avatar y QR)
@@ -400,14 +402,17 @@ def main() -> None:
 
     # Proceso de generación cuando se presiona el botón
     if generate:
-        # Validar que se haya ingresado un brief
-        if not brief.strip():
-            st.warning(MESSAGES["brief_empty_warning"])
-            logger.warning("Intento de generación sin brief")
+        # Determinar si hay archivos adjuntos (documentos de contexto, avatar o QR)
+        has_context_docs = bool(uploaded_files)
+
+        # Validar que se haya ingresado un brief o que haya documentos de apoyo
+        if not brief.strip() and not has_context_docs:
+            st.warning(MESSAGES["brief_or_files_required"])
+            logger.warning("Intento de generación sin brief ni archivos adjuntos")
             return
 
-        # Validar longitud del brief
-        if len(brief) > MAX_BRIEF_LENGTH:
+        # Validar longitud del brief (solo si se proporcionó)
+        if brief.strip() and len(brief) > MAX_BRIEF_LENGTH:
             st.warning(MESSAGES["brief_too_long_warning"].format(MAX_BRIEF_LENGTH))
             logger.warning(f"Brief demasiado largo: {len(brief):,} caracteres")
             return
