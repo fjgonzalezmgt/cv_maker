@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.51-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
-![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-412991?style=for-the-badge&logo=openai&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-GPT--5-412991?style=for-the-badge&logo=openai&logoColor=white)
 ![License](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey?style=for-the-badge)
 ![Tests](https://img.shields.io/badge/Tests-76%20passed-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)
 
@@ -28,7 +28,8 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 - **Personalización de color:** permite definir un color de acento mediante un *color picker*.  
 - **Soporte de imágenes:** opción de incluir fotografía y QR (LinkedIn o portafolio) embebidos en el HTML mediante Data URI.  
 - **Procesamiento de archivos de contexto:** puedes subir documentos o imágenes de referencia que se envían como contexto adicional al modelo.  
-- **Compatibilidad con múltiples modelos OpenAI:** configurable entre `gpt-4.1-mini`, `gpt-4.1`, `gpt-4o-mini`, y `gpt-4o`.
+- **Compatibilidad con múltiples modelos OpenAI:** configurable entre `gpt-5.4`, `gpt-5.2`, `gpt-4.1-mini`, `gpt-4.1`, `gpt-4o-mini` y `gpt-4o`.
+- **Selección de idioma:** genera el CV en **Español** o **English** desde la interfaz.
 - **Configuración centralizada:** todas las constantes y parámetros en un solo archivo `config.py`.
 - **Manejo robusto de errores:** reintentos automáticos con backoff exponencial para la API de OpenAI.
 - **Suite de pruebas:** 76 tests unitarios con pytest para garantizar la calidad del código.
@@ -145,7 +146,7 @@ ui.bat
 
 1. Escribe el *brief* con tu perfil, experiencia y objetivo profesional.  
 2. (Opcional) Sube tu foto y código QR.  
-3. Selecciona el modelo de OpenAI y el color de acento.  
+3. Selecciona el modelo de OpenAI, el idioma del CV y el color de acento.  
 4. Ajusta los tokens máximos según la complejidad del CV.
 5. Haz clic en **"🚀 Generar CV"**.  
 6. Visualiza el resultado y descárgalo como `cv.html`.
@@ -203,7 +204,7 @@ Puedes ver un ejemplo real generado con esta aplicación en el siguiente enlace:
                                ▼                        ▼
                         ┌─────────────────┐     ┌─────────────────┐
                         │   config.py     │     │  OpenAI API     │
-                        │ (Configuración) │     │  (GPT-4/4o)     │
+                        │ (Configuración) │     │  (GPT-5/4o)     │
                         └─────────────────┘     └─────────────────┘
                                │
                                ▼
@@ -230,10 +231,12 @@ Puedes ver un ejemplo real generado con esta aplicación en el siguiente enlace:
 
 | Modelo | Descripción | Uso recomendado |
 |--------|-------------|-----------------|
+| `gpt-5.4` | Última generación, máxima calidad | CVs complejos, mejor redacción **(predeterminado)** |
+| `gpt-5.2` | Alta calidad, más rápido | Balance calidad/velocidad |
 | `gpt-4.1-mini` | Rápido y económico | CVs simples, iteraciones rápidas |
 | `gpt-4.1` | Balance velocidad/calidad | Uso general |
 | `gpt-4o-mini` | Multimodal, económico | CVs con imágenes de referencia |
-| `gpt-4o` | Máxima calidad | CVs complejos, mejor redacción |
+| `gpt-4o` | Calidad probada | CVs con contexto visual |
 
 ### Parámetros configurables (config.py)
 
@@ -300,7 +303,7 @@ Consulta el archivo [CHANGELOG.md](CHANGELOG.md) para ver el historial completo 
 
 **Francisco González**  
 Quality Analytics  
-Diciembre 2025
+Marzo 2026
 
 ---
 
