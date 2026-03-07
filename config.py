@@ -67,6 +67,10 @@ SUPPORTED_CONTEXT_EXTENSIONS: List[str] = ["png", "jpg", "jpeg", "webp", "pdf"]
 # Color de acento por defecto (azul oscuro)
 DEFAULT_ACCENT_COLOR: str = "#0b3a6e"
 
+# Idiomas disponibles para el CV
+AVAILABLE_LANGUAGES: List[str] = ["Español", "English"]
+DEFAULT_LANGUAGE: str = "Español"
+
 # Título de la página
 PAGE_TITLE: str = "Generador de CV HTML"
 

@@ -45,8 +45,9 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import APIConnectionError, APITimeoutError, RateLimitError
 
-from config import (AVAILABLE_MODELS, BRIEF_TEXT_AREA_HEIGHT,
-                    DEFAULT_ACCENT_COLOR, DEFAULT_MODEL, ENV_VAR_API_KEY,
+from config import (AVAILABLE_LANGUAGES, AVAILABLE_MODELS,
+                    BRIEF_TEXT_AREA_HEIGHT, DEFAULT_ACCENT_COLOR,
+                    DEFAULT_LANGUAGE, DEFAULT_MODEL, ENV_VAR_API_KEY,
                     HEX_COLOR_PATTERN, LOG_FORMAT, LOG_LEVEL, MAX_BRIEF_LENGTH,
                     MESSAGES, PAGE_TITLE, PREVIEW_IFRAME_HEIGHT,
                     SUPPORTED_CONTEXT_EXTENSIONS, SUPPORTED_IMAGE_EXTENSIONS,
@@ -146,7 +147,7 @@ def temp_uploaded_files(files: list):
                 logger.warning(f"No se pudo eliminar archivo temporal {path}: {e}")
 
 
-def build_content(brief: str, accent: str, include_accent_hint: bool, has_avatar: bool, has_qr: bool, target_position: str = "") -> str:
+def build_content(brief: str, accent: str, include_accent_hint: bool, has_avatar: bool, has_qr: bool, target_position: str = "", language: str = "Español") -> str:
     """
     Construye el contenido del prompt para el modelo de IA.
     
@@ -160,15 +161,20 @@ def build_content(brief: str, accent: str, include_accent_hint: bool, has_avatar
         has_avatar: Indica si se proporcionó una foto de perfil
         has_qr: Indica si se proporcionó un código QR
         target_position: Puesto al que se orienta el CV (opcional)
+        language: Idioma en que se debe generar el CV ("Español" o "English")
         
     Returns:
         String con el prompt completo para enviar al modelo
         
     Example:
-        >>> build_content("Analista de datos con 5 años...", "#0b3a6e", True, True, False, "Data Analyst")
-        'Enfoca el CV para el puesto: Data Analyst\n\nAnalista de datos...
+        >>> build_content("Analista de datos con 5 años...", "#0b3a6e", True, True, False, "Data Analyst", "English")
+        'Generate the CV in English...\n\nAnalista de datos...
     """
     parts = []
+    if language == "English":
+        parts.append("Generate the entire CV content in English.")
+    else:
+        parts.append("Genera todo el contenido del CV en español.")
     if target_position.strip():
         parts.append(f"Enfoca el CV para el puesto: {target_position.strip()}")
     if brief.strip():
@@ -310,6 +316,15 @@ def main() -> None:
             help="Selecciona el modelo de OpenAI a utilizar.",
         )
         
+        # Idioma del CV
+        language = st.radio(
+            "🌐 Idioma del CV",
+            AVAILABLE_LANGUAGES,
+            index=AVAILABLE_LANGUAGES.index(DEFAULT_LANGUAGE),
+            horizontal=True,
+            help="Idioma en que se generará el contenido del CV.",
+        )
+
         # Color de acento
         accent = st.color_picker(
             "🎨 Color de acento",
@@ -452,7 +467,7 @@ def main() -> None:
         # Generar el CV usando el modelo de OpenAI
         try:
             with temp_uploaded_files(files_for_context) as temp_paths:
-                user_content = build_content(brief, accent, include_accent_hint, bool(avatar_upload), bool(qr_upload), target_position)
+                user_content = build_content(brief, accent, include_accent_hint, bool(avatar_upload), bool(qr_upload), target_position, language)
                 
                 # Barra de progreso
                 progress_bar = st.progress(0, text=MESSAGES["generating"])
