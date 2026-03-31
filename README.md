@@ -1,10 +1,10 @@
-# Generador de CV en HTML con OpenAI
+# Generador de CV en HTML y LaTeX con OpenAI
 
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.51-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--5-412991?style=for-the-badge&logo=openai&logoColor=white)
 ![License](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Tests-76%20passed-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-93%20passed-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)
 
 ![Pandas](https://img.shields.io/badge/Pandas-2.3-150458?style=flat-square&logo=pandas&logoColor=white)
 ![Pillow](https://img.shields.io/badge/Pillow-12.0-3776AB?style=flat-square&logo=python&logoColor=white)
@@ -12,11 +12,12 @@
 ![Conda](https://img.shields.io/badge/Conda-Environment-44A833?style=flat-square&logo=anaconda&logoColor=white)
 ![HTML5](https://img.shields.io/badge/HTML5-Output-E34F26?style=flat-square&logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-Styled-1572B6?style=flat-square&logo=css3&logoColor=white)
+![LaTeX](https://img.shields.io/badge/LaTeX-Output-008080?style=flat-square&logo=latex&logoColor=white)
 
 ---
 
-Aplicación desarrollada en **Python + Streamlit** que genera **currículums en HTML listos para imprimir**, a partir de un breve perfil profesional redactado por el usuario.  
-El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un documento HTML completo basado en un **template estructurado, semántico y optimizado para ATS**.
+Aplicación desarrollada en **Python + Streamlit** que genera **currículums en HTML y LaTeX listos para imprimir**, a partir de un breve perfil profesional redactado por el usuario.  
+El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un documento completo basado en **templates estructurados, semánticos y optimizados para ATS**.
 
 ---
 
@@ -24,6 +25,8 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 
 - **Interfaz web con Streamlit:** interfaz simple e intuitiva para ingresar datos y generar el CV.  
 - **Generación automática de HTML:** el modelo produce un documento completo (`<!DOCTYPE html> ... </html>`) siguiendo estrictas reglas de formato y estilo.  
+- **Generación automática de LaTeX:** también puede producir un archivo `.tex` compilable con template profesional basado en `article`, listo para pdflatex/xelatex.  
+- **Selección de formato:** elige entre HTML o LaTeX directamente desde la interfaz.  
 - **Template profesional incluido:** mantiene estructura fija con secciones de perfil, experiencia, educación, habilidades, idiomas, etc.  
 - **Personalización de color:** permite definir un color de acento mediante un *color picker*.  
 - **Soporte de imágenes:** opción de incluir fotografía y QR (LinkedIn o portafolio) embebidos en el HTML mediante Data URI.  
@@ -32,9 +35,9 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 - **Selección de idioma:** genera el CV en **Español** o **English** desde la interfaz.
 - **Configuración centralizada:** todas las constantes y parámetros en un solo archivo `config.py`.
 - **Manejo robusto de errores:** reintentos automáticos con backoff exponencial para la API de OpenAI.
-- **Suite de pruebas:** 76 tests unitarios con pytest para garantizar la calidad del código.
+- **Suite de pruebas:** 93 tests unitarios con pytest para garantizar la calidad del código.
 - **Validación de entradas:** validación de colores hexadecimales y longitud del brief.
-- **Validación de salidas:** verificación de estructura HTML válida en las respuestas.
+- **Validación de salidas:** verificación de estructura HTML y LaTeX válida en las respuestas.
 - **Prompt externo:** sistema de prompts modular y mantenible en archivos separados.
 
 ---
@@ -46,7 +49,8 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 ├── openai_client.py          # Módulo de conexión y llamada a la API de OpenAI
 ├── config.py                 # Configuración centralizada del proyecto
 ├── prompts/                  # Directorio de prompts del sistema
-│   └── system_prompt.md      # Prompt principal para generación de CVs
+│   ├── system_prompt.md      # Prompt principal para generación de CVs en HTML
+│   └── system_prompt_latex.md # Prompt para generación de CVs en LaTeX
 ├── environment.yml           # Archivo para crear el entorno Conda
 ├── requirements.txt          # Dependencias completas (pip freeze)
 ├── requirements.min.txt      # Dependencias mínimas
@@ -58,7 +62,7 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 ├── .env.example              # Ejemplo de archivo de configuración de la API Key
 ├── .gitignore                # Archivos ignorados por Git
 ├── README.md                 # Este archivo
-└── tests/                    # Suite de pruebas unitarias (76 tests)
+└── tests/                    # Suite de pruebas unitarias (93 tests)
     ├── __init__.py
     ├── test_app.py           # Tests de la aplicación principal
     ├── test_config.py        # Tests de configuración
@@ -68,7 +72,7 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 ### Descripción de archivos principales
 
 - **app.py:**  
-  Define la interfaz, la lógica principal y la integración con OpenAI. Gestiona cargas de archivos, configuración del modelo y renderizado del HTML generado. Incluye validación de entradas (colores, longitud de brief) y manejo de archivos temporales con context managers.
+  Define la interfaz, la lógica principal y la integración con OpenAI. Gestiona cargas de archivos, configuración del modelo y renderizado del HTML o LaTeX generado. Incluye validación de entradas (colores, longitud de brief) y manejo de archivos temporales con context managers.
 
 - **openai_client.py:**  
   Contiene las funciones auxiliares de conexión con la API de OpenAI. Procesa imágenes y PDFs, y maneja la llamada a la API con los mensajes estructurados en el formato esperado por la **Responses API**. Incluye reintentos automáticos con backoff exponencial para errores de rate limit, timeout y conexión.
@@ -84,7 +88,10 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
   - Rutas de archivos del sistema (prompts)
 
 - **prompts/system_prompt.md:**  
-  Archivo externo que contiene el prompt del sistema para la generación de CVs. Permite modificar las instrucciones de generación sin tocar el código Python.
+  Archivo externo que contiene el prompt del sistema para la generación de CVs en HTML. Permite modificar las instrucciones de generación sin tocar el código Python.
+
+- **prompts/system_prompt_latex.md:**  
+  Prompt del sistema para la generación de CVs en LaTeX. Incluye un template base compilable con reglas estrictas de formato, escapado de caracteres especiales y estructura de secciones.
 
 - **environment.yml:**  
   Permite crear un entorno Conda con todas las dependencias necesarias para ejecutar la aplicación.
@@ -144,18 +151,19 @@ ui.bat
 
 ### En la interfaz:
 
-1. Escribe el *brief* con tu perfil, experiencia y objetivo profesional.  
-2. (Opcional) Sube tu foto y código QR.  
-3. Selecciona el idioma del CV y el color de acento.  
-4. Ajusta los tokens máximos según la complejidad del CV.
-5. Haz clic en **"🚀 Generar CV"**.  
-6. Visualiza el resultado y descárgalo como `cv.html`.
+1. Selecciona el **formato de salida** (HTML o LaTeX).
+2. Escribe el *brief* con tu perfil, experiencia y objetivo profesional.  
+3. (Opcional) Sube tu foto y código QR (solo aplica para HTML).
+4. Selecciona el idioma del CV y el color de acento.
+5. Ajusta los tokens máximos según la complejidad del CV.
+6. Haz clic en **"🚀 Generar CV"**.  
+7. Visualiza el resultado y descárgalo como `cv.html` o `cv.tex`.
 
 ---
 
 ## 🧪 Pruebas
 
-El proyecto incluye una suite completa de **76 pruebas unitarias** con pytest:
+El proyecto incluye una suite completa de **93 pruebas unitarias** con pytest:
 
 ```bash
 # Ejecutar todas las pruebas
@@ -174,7 +182,7 @@ pytest tests/test_config.py -v
 
 | Módulo | Tests | Descripción |
 |--------|-------|-------------|
-| `test_app.py` | 45+ | Interfaz, validaciones, carga de prompts |
+| `test_app.py` | 55+ | Interfaz, validaciones, carga de prompts, LaTeX |
 | `test_openai_client.py` | 25+ | Cliente API, reintentos, procesamiento de imágenes |
 | `test_config.py` | 6 | Configuración y constantes |
 
@@ -186,7 +194,7 @@ pytest tests/test_config.py -v
 > Ingeniero industrial con 10 años de experiencia en manufactura y mejora continua. Experto en Lean Six Sigma, análisis de datos con Power BI y automatización de procesos de calidad.
 
 **Salida esperada:**  
-Un documento HTML profesional con diseño limpio, secciones completas, redacción ATS-friendly y métricas de impacto, listo para impresión o envío digital.
+Un documento HTML o LaTeX profesional con diseño limpio, secciones completas, redacción ATS-friendly y métricas de impacto, listo para impresión o envío digital.
 
 Puedes ver un ejemplo real generado con esta aplicación en el siguiente enlace:  
 👉 [Ejemplo de CV generado](https://qualityanalytics.net/wp-content/uploads/2025/11/cv.html)
@@ -215,13 +223,13 @@ Puedes ver un ejemplo real generado con esta aplicación en el siguiente enlace:
 ```
 
 1. El usuario ingresa los datos mediante Streamlit.  
-2. `app.py` carga el prompt del sistema desde `prompts/system_prompt.md` con las reglas estrictas de estructura y estilo.
+2. `app.py` carga el prompt del sistema desde `prompts/system_prompt.md` o `prompts/system_prompt_latex.md` según el formato elegido, con las reglas estrictas de estructura y estilo.
 3. Se validan las entradas (color hexadecimal, longitud del brief).
 4. `config.py` proporciona los parámetros de configuración centralizados.
 5. `openai_client.py` convierte los archivos subidos en objetos adecuados (`input_image` o `input_file`) y los envía junto al texto al modelo seleccionado.  
 6. El cliente implementa reintentos automáticos con backoff exponencial para errores de rate limit, timeout y conexión.
-7. Se valida que la respuesta contenga HTML válido.
-8. El modelo devuelve un HTML completo que se renderiza directamente en la app y puede descargarse.  
+7. Se valida que la respuesta contenga HTML o LaTeX válido.
+8. El modelo devuelve un documento completo (HTML o LaTeX) que se renderiza directamente en la app y puede descargarse.  
 
 ---
 
@@ -251,7 +259,8 @@ MAX_BRIEF_LENGTH = 15000     # Longitud máxima del brief
 HEX_COLOR_PATTERN = r"^#[0-9A-Fa-f]{6}$"  # Patrón de color válido
 
 # Rutas
-SYSTEM_PROMPT_PATH = "prompts/system_prompt.md"  # Ubicación del prompt
+SYSTEM_PROMPT_PATH = "prompts/system_prompt.md"        # Prompt HTML
+LATEX_SYSTEM_PROMPT_PATH = "prompts/system_prompt_latex.md"  # Prompt LaTeX
 ```
 
 ---
@@ -270,6 +279,7 @@ SYSTEM_PROMPT_PATH = "prompts/system_prompt.md"  # Ubicación del prompt
 Puedes adaptar este proyecto para:
 
 - Usar otros templates HTML o temas visuales modificando el archivo `prompts/system_prompt.md`.
+- Usar otros templates LaTeX modificando el archivo `prompts/system_prompt_latex.md`.
 - Cambiar el idioma o tono ajustando las instrucciones del sistema.
 - Modificar los colores y parámetros de UI en `config.py`.
 - Cambiar el modelo de OpenAI actualizando `DEFAULT_MODEL` en `config.py`.
@@ -282,13 +292,13 @@ Puedes adaptar este proyecto para:
 
 Consulta el archivo [CHANGELOG.md](CHANGELOG.md) para ver el historial completo de cambios del proyecto.
 
-### Última versión: v1.1.0
+### Última versión: v1.2.0
 
-- Extracción del system prompt a archivo externo
-- Validación de entradas (color hexadecimal, longitud de brief)
-- Manejo mejorado de errores con mensajes específicos
-- Context managers para archivos temporales
-- 76 tests unitarios con cobertura completa
+- Generación de CV en formato LaTeX con template profesional
+- Selección de formato de salida (HTML/LaTeX) en la interfaz
+- Prompt del sistema dedicado para LaTeX (`system_prompt_latex.md`)
+- Validación de estructura LaTeX en las respuestas
+- 93 tests unitarios con cobertura completa
 
 ---
 

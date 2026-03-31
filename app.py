@@ -1,20 +1,20 @@
 """
-Generador de CV en HTML con OpenAI
+Generador de CV en HTML y LaTeX con OpenAI
 
 Este módulo proporciona una aplicación Streamlit para generar currículums vitae
-profesionales en formato HTML utilizando modelos de lenguaje de OpenAI.
+profesionales en formato HTML y LaTeX utilizando modelos de lenguaje de OpenAI.
 
 Autor: Francisco Gonzalez
 Fecha: Noviembre 2025
 Versión: 1.0
 
 Características principales:
-    - Generación de CV en HTML basado en un brief descriptivo
-    - Soporte para modelos GPT-4 y GPT-4o de OpenAI
+    - Generación de CV en HTML y LaTeX basado en un brief descriptivo
+    - Modelo fijo gpt-5.4 de OpenAI
     - Personalización del color de acento del CV
     - Carga de foto de perfil y código QR
     - Vista previa en tiempo real del CV generado
-    - Descarga del HTML resultante
+    - Descarga del resultado en HTML o LaTeX
 
 Dependencias:
     - streamlit: Framework web para la interfaz de usuario
@@ -378,10 +378,11 @@ def main() -> None:
         # Información del proyecto
         st.markdown("""        
         **📚 Guía rápida:**
-        1. Escribe tu perfil profesional
-        2. (Opcional) Sube foto y QR
-        3. Haz clic en "Generar CV"
-        4. Descarga el HTML resultante
+        1. Selecciona formato (HTML o LaTeX)
+        2. Escribe tu perfil profesional
+        3. (Opcional) Sube foto y QR
+        4. Haz clic en "Generar CV"
+        5. Descarga el resultado (.html o .tex)
         """)
 
     # =========================================================================
