@@ -45,13 +45,12 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import APIConnectionError, APITimeoutError, RateLimitError
 
-from config import (AVAILABLE_LANGUAGES, AVAILABLE_MODELS,
-                    BRIEF_TEXT_AREA_HEIGHT, DEFAULT_ACCENT_COLOR,
-                    DEFAULT_LANGUAGE, DEFAULT_MODEL, ENV_VAR_API_KEY,
-                    HEX_COLOR_PATTERN, LOG_FORMAT, LOG_LEVEL, MAX_BRIEF_LENGTH,
-                    MESSAGES, PAGE_TITLE, PREVIEW_IFRAME_HEIGHT,
-                    SUPPORTED_CONTEXT_EXTENSIONS, SUPPORTED_IMAGE_EXTENSIONS,
-                    SYSTEM_PROMPT_PATH)
+from config import (AVAILABLE_LANGUAGES, BRIEF_TEXT_AREA_HEIGHT,
+                    DEFAULT_ACCENT_COLOR, DEFAULT_LANGUAGE, DEFAULT_MODEL,
+                    ENV_VAR_API_KEY, HEX_COLOR_PATTERN, LOG_FORMAT, LOG_LEVEL,
+                    MAX_BRIEF_LENGTH, MESSAGES, PAGE_TITLE,
+                    PREVIEW_IFRAME_HEIGHT, SUPPORTED_CONTEXT_EXTENSIONS,
+                    SUPPORTED_IMAGE_EXTENSIONS, SYSTEM_PROMPT_PATH)
 from openai_client import OpenAIClientError, chat_completion
 
 # Configurar logging
@@ -308,14 +307,8 @@ def main() -> None:
         
         st.divider()
         
-        # Selección de modelo
-        model = st.selectbox(
-            "🤖 Modelo",
-            AVAILABLE_MODELS,
-            index=AVAILABLE_MODELS.index(DEFAULT_MODEL),
-            help="Selecciona el modelo de OpenAI a utilizar.",
-        )
-        
+        model = DEFAULT_MODEL
+
         # Idioma del CV
         language = st.radio(
             "🌐 Idioma del CV",

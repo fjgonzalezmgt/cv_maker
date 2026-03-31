@@ -28,7 +28,7 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 - **Personalización de color:** permite definir un color de acento mediante un *color picker*.  
 - **Soporte de imágenes:** opción de incluir fotografía y QR (LinkedIn o portafolio) embebidos en el HTML mediante Data URI.  
 - **Procesamiento de archivos de contexto:** puedes subir documentos o imágenes de referencia que se envían como contexto adicional al modelo.  
-- **Compatibilidad con múltiples modelos OpenAI:** configurable entre `gpt-5.4`, `gpt-5.2`, `gpt-4.1-mini`, `gpt-4.1`, `gpt-4o-mini` y `gpt-4o`.
+- **Modelo fijo `gpt-5.4`:** utiliza siempre la última generación de OpenAI, sin necesidad de configuración adicional.
 - **Selección de idioma:** genera el CV en **Español** o **English** desde la interfaz.
 - **Configuración centralizada:** todas las constantes y parámetros en un solo archivo `config.py`.
 - **Manejo robusto de errores:** reintentos automáticos con backoff exponencial para la API de OpenAI.
@@ -146,7 +146,7 @@ ui.bat
 
 1. Escribe el *brief* con tu perfil, experiencia y objetivo profesional.  
 2. (Opcional) Sube tu foto y código QR.  
-3. Selecciona el modelo de OpenAI, el idioma del CV y el color de acento.  
+3. Selecciona el idioma del CV y el color de acento.  
 4. Ajusta los tokens máximos según la complejidad del CV.
 5. Haz clic en **"🚀 Generar CV"**.  
 6. Visualiza el resultado y descárgalo como `cv.html`.
@@ -227,16 +227,9 @@ Puedes ver un ejemplo real generado con esta aplicación en el siguiente enlace:
 
 ## ⚙️ Configuración avanzada
 
-### Modelos disponibles
+### Modelo utilizado
 
-| Modelo | Descripción | Uso recomendado |
-|--------|-------------|-----------------|
-| `gpt-5.4` | Última generación, máxima calidad | CVs complejos, mejor redacción **(predeterminado)** |
-| `gpt-5.2` | Alta calidad, más rápido | Balance calidad/velocidad |
-| `gpt-4.1-mini` | Rápido y económico | CVs simples, iteraciones rápidas |
-| `gpt-4.1` | Balance velocidad/calidad | Uso general |
-| `gpt-4o-mini` | Multimodal, económico | CVs con imágenes de referencia |
-| `gpt-4o` | Calidad probada | CVs con contexto visual |
+La aplicación usa siempre `gpt-5.4` (última generación de OpenAI). El modelo está definido como constante `DEFAULT_MODEL` en `config.py`.
 
 ### Parámetros configurables (config.py)
 
@@ -279,7 +272,7 @@ Puedes adaptar este proyecto para:
 - Usar otros templates HTML o temas visuales modificando el archivo `prompts/system_prompt.md`.
 - Cambiar el idioma o tono ajustando las instrucciones del sistema.
 - Modificar los colores y parámetros de UI en `config.py`.
-- Añadir nuevos modelos de OpenAI actualizando `AVAILABLE_MODELS`.
+- Cambiar el modelo de OpenAI actualizando `DEFAULT_MODEL` en `config.py`.
 - Ajustar los parámetros de validación (longitud máxima de brief, patrones de color).
 - Integrarlo con bases de datos, portales de empleo o generadores de portafolio.
 
