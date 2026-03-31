@@ -58,7 +58,6 @@ El sistema aprovecha los modelos GPT de OpenAI para transformar un *brief* en un
 ├── pytest.ini                # Configuración de pytest
 ├── ui.bat                    # Script de inicio rápido (Windows)
 ├── CV.html                   # Ejemplo de CV generado
-├── CHANGELOG.md              # Historial de cambios del proyecto
 ├── .env.example              # Ejemplo de archivo de configuración de la API Key
 ├── .gitignore                # Archivos ignorados por Git
 ├── README.md                 # Este archivo
@@ -288,11 +287,7 @@ Puedes adaptar este proyecto para:
 
 ---
 
-## 📋 Historial de cambios
-
-Consulta el archivo [CHANGELOG.md](CHANGELOG.md) para ver el historial completo de cambios del proyecto.
-
-### Última versión: v1.2.0
+## 📋 Última versión: v1.2.0
 
 - Generación de CV en formato LaTeX con template profesional
 - Selección de formato de salida (HTML/LaTeX) en la interfaz
