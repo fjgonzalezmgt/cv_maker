@@ -72,8 +72,12 @@ DEFAULT_ACCENT_COLOR: str = "#0b3a6e"
 AVAILABLE_LANGUAGES: List[str] = ["Español", "English"]
 DEFAULT_LANGUAGE: str = "Español"
 
+# Formatos de salida disponibles
+AVAILABLE_FORMATS: List[str] = ["HTML", "LaTeX"]
+DEFAULT_FORMAT: str = "HTML"
+
 # Título de la página
-PAGE_TITLE: str = "Generador de CV HTML"
+PAGE_TITLE: str = "Generador de CV con OpenAI"
 
 # Altura del área de texto para el brief
 BRIEF_TEXT_AREA_HEIGHT: int = 320
@@ -105,8 +109,11 @@ HEX_COLOR_PATTERN: str = r"^#[0-9A-Fa-f]{6}$"
 # RUTAS DE ARCHIVOS
 # =============================================================================
 
-# Ruta al archivo del prompt del sistema
+# Ruta al archivo del prompt del sistema (HTML)
 SYSTEM_PROMPT_PATH: str = "prompts/system_prompt.md"
+
+# Ruta al archivo del prompt del sistema (LaTeX)
+LATEX_SYSTEM_PROMPT_PATH: str = "prompts/system_prompt_latex.md"
 
 # =============================================================================
 # MENSAJES DE UI
@@ -121,12 +128,14 @@ MESSAGES = {
     "brief_too_long_warning": "⚠️ El brief es demasiado largo. Máximo {} caracteres.",
     "invalid_color_warning": "⚠️ Color de acento inválido. Usa formato hexadecimal (#RRGGBB).",
     "invalid_html_warning": "⚠️ La respuesta del modelo no es HTML válido. Intenta de nuevo.",
+    "invalid_latex_warning": "⚠️ La respuesta del modelo no es LaTeX válido. Intenta de nuevo.",
     "generating": "🔄 Generando CV...",
     "generation_error": "❌ Error al generar el CV: {}",
     "rate_limit_error": "⏳ Demasiadas solicitudes. Por favor espera un momento e intenta de nuevo.",
     "connection_error": "🌐 Error de conexión. Verifica tu conexión a internet.",
     "timeout_error": "⏱️ La solicitud tardó demasiado. Intenta con un brief más corto o menos archivos.",
-    "download_button": "📥 Descargar HTML",
+    "download_button_html": "📥 Descargar HTML",
+    "download_button_latex": "📥 Descargar LaTeX",
     "clear_button": "🗑️ Limpiar resultado",
     "generate_button": "🚀 Generar CV",
     "prompt_load_error": "❌ No se pudo cargar el prompt del sistema: {}",

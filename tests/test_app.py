@@ -5,28 +5,22 @@ Estos tests verifican las funciones auxiliares de la aplicación Streamlit.
 No prueban la interfaz de usuario directamente.
 """
 
-import tempfile
 import os
-from pathlib import Path
+# Importar funciones del módulo app
+import sys
+import tempfile
 from io import BytesIO
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 
-
-# Importar funciones del módulo app
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app import (
-    build_content,
-    persist_uploaded_files,
-    file_to_data_uri,
-    apply_image_overrides,
-    load_system_prompt,
-    validate_html_response,
-    validate_accent_color,
-)
+from app import (apply_image_overrides, build_content, file_to_data_uri,
+                 load_system_prompt, persist_uploaded_files,
+                 validate_accent_color, validate_html_response,
+                 validate_latex_response)
 
 
 class TestBuildContent:
@@ -41,7 +35,7 @@ class TestBuildContent:
             has_avatar=False,
             has_qr=False,
         )
-        assert result == "Perfil de prueba"
+        assert "Perfil de prueba" in result
     
     def test_with_accent_hint(self):
         """Incluye el color de acento cuando se solicita."""
@@ -87,7 +81,7 @@ class TestBuildContent:
             has_avatar=False,
             has_qr=False,
         )
-        assert result == "Perfil con espacios"
+        assert "Perfil con espacios" in result
     
     def test_all_options(self):
         """Incluye todas las opciones cuando están habilitadas."""
@@ -325,3 +319,95 @@ class TestLoadSystemPrompt:
         assert len(prompt) > 0
         # Verificar que contiene contenido esperado
         assert "HTML" in prompt or "CV" in prompt
+
+    def test_loads_latex_prompt_successfully(self):
+        """Carga el prompt LaTeX del sistema correctamente."""
+        prompt = load_system_prompt("LaTeX")
+        assert len(prompt) > 0
+        assert "LaTeX" in prompt or "documentclass" in prompt
+
+    def test_loads_html_prompt_by_default(self):
+        """Carga el prompt HTML por defecto."""
+        prompt = load_system_prompt("HTML")
+        assert len(prompt) > 0
+        assert "HTML" in prompt
+
+
+class TestValidateLatexResponse:
+    """Tests para la función validate_latex_response."""
+
+    def test_valid_latex(self):
+        """Retorna True para LaTeX válido con documentclass."""
+        latex = "\\documentclass[9pt,a4paper]{article}\n\\begin{document}\nHola\n\\end{document}"
+        assert validate_latex_response(latex) is True
+
+    def test_valid_latex_with_comments(self):
+        """Retorna True para LaTeX con comentarios antes de documentclass."""
+        latex = "%% Mi CV\n% Compilar con xelatex\n\\documentclass{article}\n\\begin{document}\n\\end{document}"
+        assert validate_latex_response(latex) is True
+
+    def test_valid_latex_with_whitespace(self):
+        """Retorna True para LaTeX con espacios en blanco al inicio."""
+        latex = "   \n\n\\documentclass{article}\n\\begin{document}\n\\end{document}"
+        assert validate_latex_response(latex) is True
+
+    def test_invalid_latex_no_documentclass(self):
+        """Retorna False para LaTeX sin documentclass."""
+        latex = "\\begin{document}\nHola\n\\end{document}"
+        assert validate_latex_response(latex) is False
+
+    def test_invalid_empty_string(self):
+        """Retorna False para string vacío."""
+        assert validate_latex_response("") is False
+
+    def test_invalid_none(self):
+        """Retorna False para None."""
+        assert validate_latex_response(None) is False
+
+    def test_invalid_html_response(self):
+        """Retorna False para respuesta HTML."""
+        assert validate_latex_response("<!DOCTYPE html><html></html>") is False
+
+    def test_invalid_text_response(self):
+        """Retorna False para texto plano."""
+        assert validate_latex_response("Lo siento, no puedo generar el CV.") is False
+
+
+class TestBuildContentLatex:
+    """Tests para build_content con formato LaTeX."""
+
+    def test_latex_no_avatar_hint(self):
+        """No incluye hint de avatar en formato LaTeX."""
+        result = build_content(
+            brief="Perfil",
+            accent="#000000",
+            include_accent_hint=False,
+            has_avatar=True,
+            has_qr=False,
+            output_format="LaTeX",
+        )
+        assert "avatar.png" not in result
+
+    def test_latex_no_qr_hint(self):
+        """No incluye hint de QR en formato LaTeX."""
+        result = build_content(
+            brief="Perfil",
+            accent="#000000",
+            include_accent_hint=False,
+            has_avatar=False,
+            has_qr=True,
+            output_format="LaTeX",
+        )
+        assert "qr.png" not in result
+
+    def test_html_includes_avatar_hint(self):
+        """Incluye hint de avatar en formato HTML."""
+        result = build_content(
+            brief="Perfil",
+            accent="#000000",
+            include_accent_hint=False,
+            has_avatar=True,
+            has_qr=False,
+            output_format="HTML",
+        )
+        assert "avatar.png" in result

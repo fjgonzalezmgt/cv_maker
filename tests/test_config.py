@@ -6,29 +6,16 @@ y tengan los tipos esperados.
 """
 
 import pytest
-from config import (
-    ENV_VAR_API_KEY,
-    DEFAULT_MODEL,
-    AVAILABLE_MODELS,
-    DEFAULT_MAX_TOKENS,
-    MIN_TOKENS,
-    MAX_TOKENS,
-    TOKEN_STEP,
-    DEFAULT_TEMPERATURE,
-    API_TIMEOUT,
-    MAX_FILE_BYTES,
-    MAX_IMAGE_SIDE,
-    JPEG_QUALITY,
-    SUPPORTED_IMAGE_EXTENSIONS,
-    SUPPORTED_CONTEXT_EXTENSIONS,
-    DEFAULT_ACCENT_COLOR,
-    PAGE_TITLE,
-    BRIEF_TEXT_AREA_HEIGHT,
-    PREVIEW_IFRAME_HEIGHT,
-    LOG_LEVEL,
-    LOG_FORMAT,
-    MESSAGES,
-)
+
+from config import (API_TIMEOUT, AVAILABLE_FORMATS, AVAILABLE_MODELS,
+                    BRIEF_TEXT_AREA_HEIGHT, DEFAULT_ACCENT_COLOR,
+                    DEFAULT_FORMAT, DEFAULT_MAX_TOKENS, DEFAULT_MODEL,
+                    DEFAULT_TEMPERATURE, ENV_VAR_API_KEY, JPEG_QUALITY,
+                    LATEX_SYSTEM_PROMPT_PATH, LOG_FORMAT, LOG_LEVEL,
+                    MAX_FILE_BYTES, MAX_IMAGE_SIDE, MAX_TOKENS, MESSAGES,
+                    MIN_TOKENS, PAGE_TITLE, PREVIEW_IFRAME_HEIGHT,
+                    SUPPORTED_CONTEXT_EXTENSIONS, SUPPORTED_IMAGE_EXTENSIONS,
+                    SYSTEM_PROMPT_PATH, TOKEN_STEP)
 
 
 class TestOpenAIConfig:
@@ -137,10 +124,37 @@ class TestMessages:
             "brief_empty_warning",
             "generating",
             "generation_error",
-            "download_button",
+            "download_button_html",
+            "download_button_latex",
             "clear_button",
             "generate_button",
+            "invalid_html_warning",
+            "invalid_latex_warning",
         ]
         for key in required_keys:
             assert key in MESSAGES, f"Falta el mensaje: {key}"
             assert len(MESSAGES[key]) > 0, f"Mensaje vacío: {key}"
+
+
+class TestFormatConfig:
+    """Tests para configuración de formatos."""
+
+    def test_available_formats_not_empty(self):
+        """Debe haber al menos un formato disponible."""
+        assert len(AVAILABLE_FORMATS) > 0
+
+    def test_default_format_in_available(self):
+        """El formato por defecto debe estar en la lista."""
+        assert DEFAULT_FORMAT in AVAILABLE_FORMATS
+
+    def test_html_and_latex_available(self):
+        """HTML y LaTeX deben estar disponibles."""
+        assert "HTML" in AVAILABLE_FORMATS
+        assert "LaTeX" in AVAILABLE_FORMATS
+
+    def test_prompt_paths_are_strings(self):
+        """Las rutas de prompts deben ser strings no vacíos."""
+        assert isinstance(SYSTEM_PROMPT_PATH, str)
+        assert len(SYSTEM_PROMPT_PATH) > 0
+        assert isinstance(LATEX_SYSTEM_PROMPT_PATH, str)
+        assert len(LATEX_SYSTEM_PROMPT_PATH) > 0

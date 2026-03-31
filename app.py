@@ -45,9 +45,11 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import APIConnectionError, APITimeoutError, RateLimitError
 
-from config import (AVAILABLE_LANGUAGES, BRIEF_TEXT_AREA_HEIGHT,
-                    DEFAULT_ACCENT_COLOR, DEFAULT_LANGUAGE, DEFAULT_MODEL,
-                    ENV_VAR_API_KEY, HEX_COLOR_PATTERN, LOG_FORMAT, LOG_LEVEL,
+from config import (AVAILABLE_FORMATS, AVAILABLE_LANGUAGES,
+                    BRIEF_TEXT_AREA_HEIGHT, DEFAULT_ACCENT_COLOR,
+                    DEFAULT_FORMAT, DEFAULT_LANGUAGE, DEFAULT_MODEL,
+                    ENV_VAR_API_KEY, HEX_COLOR_PATTERN,
+                    LATEX_SYSTEM_PROMPT_PATH, LOG_FORMAT, LOG_LEVEL,
                     MAX_BRIEF_LENGTH, MESSAGES, PAGE_TITLE,
                     PREVIEW_IFRAME_HEIGHT, SUPPORTED_CONTEXT_EXTENSIONS,
                     SUPPORTED_IMAGE_EXTENSIONS, SYSTEM_PROMPT_PATH)
@@ -61,17 +63,21 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
-def load_system_prompt() -> str:
+def load_system_prompt(output_format: str = "HTML") -> str:
     """
     Carga el prompt del sistema desde un archivo externo.
     
-    Lee el contenido del archivo de prompt del sistema definido en SYSTEM_PROMPT_PATH.
+    Lee el contenido del archivo de prompt del sistema según el formato de salida.
     Si el archivo no existe o hay un error, registra el error y retorna un string vacío.
+    
+    Args:
+        output_format: Formato de salida ("HTML" o "LaTeX")
     
     Returns:
         String con el contenido del prompt del sistema
     """
-    prompt_path = Path(__file__).parent / SYSTEM_PROMPT_PATH
+    path = LATEX_SYSTEM_PROMPT_PATH if output_format == "LaTeX" else SYSTEM_PROMPT_PATH
+    prompt_path = Path(__file__).parent / path
     try:
         with open(prompt_path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -100,6 +106,30 @@ def validate_html_response(html: str) -> bool:
     if not html:
         return False
     return html.strip().lower().startswith("<!doctype html")
+
+
+def validate_latex_response(latex: str) -> bool:
+    """
+    Valida que la respuesta del modelo sea LaTeX válido.
+    
+    Verifica que el string contenga la declaración \\documentclass.
+    
+    Args:
+        latex: String con el LaTeX generado por el modelo
+        
+    Returns:
+        True si el LaTeX es válido, False en caso contrario
+    """
+    if not latex:
+        return False
+    stripped = latex.strip()
+    # Allow optional comments before \documentclass
+    for line in stripped.splitlines():
+        line = line.strip()
+        if not line or line.startswith("%"):
+            continue
+        return line.startswith("\\documentclass")
+    return False
 
 
 def validate_accent_color(color: str) -> bool:
@@ -146,7 +176,7 @@ def temp_uploaded_files(files: list):
                 logger.warning(f"No se pudo eliminar archivo temporal {path}: {e}")
 
 
-def build_content(brief: str, accent: str, include_accent_hint: bool, has_avatar: bool, has_qr: bool, target_position: str = "", language: str = "Español") -> str:
+def build_content(brief: str, accent: str, include_accent_hint: bool, has_avatar: bool, has_qr: bool, target_position: str = "", language: str = "Español", output_format: str = "HTML") -> str:
     """
     Construye el contenido del prompt para el modelo de IA.
     
@@ -161,6 +191,7 @@ def build_content(brief: str, accent: str, include_accent_hint: bool, has_avatar
         has_qr: Indica si se proporcionó un código QR
         target_position: Puesto al que se orienta el CV (opcional)
         language: Idioma en que se debe generar el CV ("Español" o "English")
+        output_format: Formato de salida ("HTML" o "LaTeX")
         
     Returns:
         String con el prompt completo para enviar al modelo
@@ -180,10 +211,11 @@ def build_content(brief: str, accent: str, include_accent_hint: bool, has_avatar
         parts.append(brief.strip())
     if include_accent_hint and accent:
         parts.append(f"Color de acento preferido: {accent}")
-    if has_avatar:
-        parts.append("Se proporcionó una foto para el avatar; conserva el atributo src=\"avatar.png\" en el HTML.")
-    if has_qr:
-        parts.append("Se proporcionó un código QR de LinkedIn; conserva el atributo src=\"qr.png\" en el HTML.")
+    if output_format == "HTML":
+        if has_avatar:
+            parts.append("Se proporcionó una foto para el avatar; conserva el atributo src=\"avatar.png\" en el HTML.")
+        if has_qr:
+            parts.append("Se proporcionó un código QR de LinkedIn; conserva el atributo src=\"qr.png\" en el HTML.")
     return "\n\n".join(parts)
 
 
@@ -285,11 +317,11 @@ def main() -> None:
     )
     
     # Título y descripción
-    st.title("🎯 Generador de CV HTML con OpenAI")
+    st.title("🎯 Generador de CV con OpenAI")
     st.markdown(
         """Escribe un **brief** con tu perfil, experiencia y objetivos profesionales, 
         o adjunta documentos de apoyo (el brief es opcional si subes documentos de referencia). 
-        El modelo generará un CV HTML profesional listo para imprimir."""
+        El modelo generará un CV profesional listo para imprimir."""
     )
 
     # =========================================================================
@@ -308,6 +340,15 @@ def main() -> None:
         st.divider()
         
         model = DEFAULT_MODEL
+
+        # Formato de salida
+        output_format = st.radio(
+            "📄 Formato de salida",
+            AVAILABLE_FORMATS,
+            index=AVAILABLE_FORMATS.index(DEFAULT_FORMAT),
+            horizontal=True,
+            help="Formato del CV generado: HTML (preview + descarga) o LaTeX (descarga .tex).",
+        )
 
         # Idioma del CV
         language = st.radio(
@@ -438,7 +479,7 @@ def main() -> None:
             return
 
         # Cargar el prompt del sistema
-        system_prompt = load_system_prompt()
+        system_prompt = load_system_prompt(output_format)
         if not system_prompt:
             st.error(MESSAGES["prompt_load_error"].format("Archivo no encontrado"))
             logger.error("No se pudo cargar el prompt del sistema")
@@ -452,15 +493,16 @@ def main() -> None:
 
         # Preparar lista de archivos para enviar como contexto
         files_for_context: List = list(uploaded_files) if uploaded_files else []
-        if avatar_upload:
-            files_for_context.append(avatar_upload)
-        if qr_upload:
-            files_for_context.append(qr_upload)
+        if output_format == "HTML":
+            if avatar_upload:
+                files_for_context.append(avatar_upload)
+            if qr_upload:
+                files_for_context.append(qr_upload)
 
         # Generar el CV usando el modelo de OpenAI
         try:
             with temp_uploaded_files(files_for_context) as temp_paths:
-                user_content = build_content(brief, accent, include_accent_hint, bool(avatar_upload), bool(qr_upload), target_position, language)
+                user_content = build_content(brief, accent, include_accent_hint, bool(avatar_upload), bool(qr_upload), target_position, language, output_format)
                 
                 # Barra de progreso
                 progress_bar = st.progress(0, text=MESSAGES["generating"])
@@ -489,19 +531,28 @@ def main() -> None:
                 
                 progress_bar.progress(80, text="📝 Procesando respuesta...")
                 
-                # Validar que la respuesta sea HTML válido
-                if not validate_html_response(response):
-                    st.error(MESSAGES["invalid_html_warning"])
-                    logger.error("La respuesta del modelo no es HTML válido")
-                    progress_bar.empty()
-                    return
+                # Validar respuesta según formato
+                if output_format == "LaTeX":
+                    if not validate_latex_response(response):
+                        st.error(MESSAGES["invalid_latex_warning"])
+                        logger.error("La respuesta del modelo no es LaTeX válido")
+                        progress_bar.empty()
+                        return
+                    st.session_state["cv_output"] = response
+                    st.session_state["cv_format"] = "LaTeX"
+                else:
+                    if not validate_html_response(response):
+                        st.error(MESSAGES["invalid_html_warning"])
+                        logger.error("La respuesta del modelo no es HTML válido")
+                        progress_bar.empty()
+                        return
+                    html_response = apply_image_overrides(response, avatar_data_uri, qr_data_uri)
+                    st.session_state["cv_output"] = html_response
+                    st.session_state["cv_format"] = "HTML"
                 
-                # Aplicar las imágenes al HTML
-                html_response = apply_image_overrides(response, avatar_data_uri, qr_data_uri)
-                st.session_state["cv_html"] = html_response
-                
+                cv_output = st.session_state["cv_output"]
                 progress_bar.progress(100, text="✅ ¡CV generado exitosamente!")
-                logger.info(f"CV generado exitosamente: {len(html_response):,} caracteres")
+                logger.info(f"CV generado exitosamente: {len(cv_output):,} caracteres")
                 
                 # Limpiar la barra de progreso después de un momento
                 time_module.sleep(1)
@@ -546,34 +597,50 @@ def main() -> None:
     # VISTA PREVIA Y DESCARGA
     # =========================================================================
     
-    if "cv_html" in st.session_state:
-        html = st.session_state["cv_html"]
+    if "cv_output" in st.session_state:
+        cv_output = st.session_state["cv_output"]
+        cv_format = st.session_state.get("cv_format", "HTML")
         
         st.divider()
         st.subheader("👁️ Vista Previa del CV")
         
-        # Vista previa del CV en un iframe
-        st.components.v1.html(html, height=PREVIEW_IFRAME_HEIGHT, scrolling=True)
+        if cv_format == "LaTeX":
+            # Vista previa del código LaTeX
+            st.code(cv_output, language="latex")
+        else:
+            # Vista previa del CV HTML en un iframe
+            st.components.v1.html(cv_output, height=PREVIEW_IFRAME_HEIGHT, scrolling=True)
         
         # Botones de acción
         col_download, col_clear, col_info = st.columns([1, 1, 2])
         
         with col_download:
-            st.download_button(
-                MESSAGES["download_button"],
-                data=html,
-                file_name="cv.html",
-                mime="text/html",
-                use_container_width=True,
-            )
+            if cv_format == "LaTeX":
+                st.download_button(
+                    MESSAGES["download_button_latex"],
+                    data=cv_output,
+                    file_name="cv.tex",
+                    mime="application/x-tex",
+                    use_container_width=True,
+                )
+            else:
+                st.download_button(
+                    MESSAGES["download_button_html"],
+                    data=cv_output,
+                    file_name="cv.html",
+                    mime="text/html",
+                    use_container_width=True,
+                )
         
         with col_clear:
             if st.button(MESSAGES["clear_button"], use_container_width=True):
-                st.session_state.pop("cv_html", None)
+                st.session_state.pop("cv_output", None)
+                st.session_state.pop("cv_format", None)
                 st.rerun()
         
         with col_info:
-            st.caption(f"📄 Tamaño del HTML: {len(html):,} caracteres")
+            label = "LaTeX" if cv_format == "LaTeX" else "HTML"
+            st.caption(f"📄 Tamaño del {label}: {len(cv_output):,} caracteres")
 
 
 if __name__ == "__main__":
