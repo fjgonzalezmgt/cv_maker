@@ -112,6 +112,8 @@ def _guess_mime(path: str) -> str:
         return IMAGE_EXTS[ext]
     if ext == ".pdf":
         return "application/pdf"
+    if ext == ".md":
+        return "text/markdown"
     return "application/octet-stream"
 
 
@@ -150,6 +152,17 @@ def _file_to_content_items(path: str, max_bytes: int = MAX_FILE_BYTES) -> List[d
         b64 = base64.b64encode(data).decode("ascii")
         return [{"type": "input_image", "image_url": f"data:{mime};base64,{b64}"}]
     
+    # Procesar archivos Markdown como texto plano
+    if ext == ".md":
+        logger.debug("Procesando como texto Markdown")
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                text = f.read()
+        except IOError as e:
+            logger.error(f"Error al leer archivo {path}: {e}")
+            raise FileProcessingError(f"No se pudo leer el archivo: {path}") from e
+        return [{"type": "input_text", "text": f"--- {os.path.basename(path)} ---\n{text}"}]
+
     # Procesar otros archivos
     logger.debug("Procesando como archivo genérico")
     try:

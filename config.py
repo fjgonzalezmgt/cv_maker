@@ -49,7 +49,7 @@ JPEG_QUALITY: int = 85
 SUPPORTED_IMAGE_EXTENSIONS: List[str] = ["png", "jpg", "jpeg", "webp"]
 
 # Extensiones de archivos de contexto soportadas
-SUPPORTED_CONTEXT_EXTENSIONS: List[str] = ["png", "jpg", "jpeg", "webp", "pdf"]
+SUPPORTED_CONTEXT_EXTENSIONS: List[str] = ["png", "jpg", "jpeg", "webp", "pdf", "md"]
 
 # =============================================================================
 # CONFIGURACIÓN DE UI
