@@ -79,6 +79,9 @@ desktop.ini
 *.jpeg
 *.webp
 
+# CV personal (no subir al repositorio)
+cv_francisco.md
+
 # Excepciones: archivos que SÍ queremos incluir
 !README.md
 
