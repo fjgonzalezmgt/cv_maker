@@ -32,9 +32,9 @@ class TestOpenAIConfig:
         assert MIN_TOKENS <= DEFAULT_MAX_TOKENS <= MAX_TOKENS
         assert TOKEN_STEP > 0
     
-    def test_temperature_in_range(self):
-        """La temperatura debe estar entre 0 y 2."""
-        assert 0 <= DEFAULT_TEMPERATURE <= 2
+    def test_temperature_is_none(self):
+        """La temperatura debe ser None para modelos gpt-5.x que no la soportan."""
+        assert DEFAULT_TEMPERATURE is None
     
     def test_timeout_positive(self):
         """El timeout debe ser positivo."""

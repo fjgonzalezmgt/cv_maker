@@ -26,8 +26,8 @@ MIN_TOKENS: int = 1024
 MAX_TOKENS: int = 8000
 TOKEN_STEP: int = 256
 
-# Temperatura por defecto para generación
-DEFAULT_TEMPERATURE: float = 0.2
+# Temperatura por defecto para generación (None = no enviar el parámetro, requerido para gpt-5.x)
+DEFAULT_TEMPERATURE: None = None
 
 # Timeout para llamadas a la API (segundos)
 API_TIMEOUT: float = 120.0
