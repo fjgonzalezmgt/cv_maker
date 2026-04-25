@@ -18,17 +18,7 @@ from typing import List
 ENV_VAR_API_KEY: str = "OPENAI_API_KEY"
 
 # Modelo predeterminado de OpenAI
-DEFAULT_MODEL: str = "gpt-5.4"
-
-# Modelos disponibles para selección
-AVAILABLE_MODELS: List[str] = [
-    "gpt-5.4",
-    "gpt-5.2",
-    "gpt-4.1-mini",
-    "gpt-4.1",
-    "gpt-4o-mini",
-    "gpt-4o",
-]
+DEFAULT_MODEL: str = "gpt-5.5"
 
 # Configuración de tokens
 DEFAULT_MAX_TOKENS: int = 6000

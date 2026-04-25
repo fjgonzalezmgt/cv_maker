@@ -7,13 +7,12 @@ y tengan los tipos esperados.
 
 import pytest
 
-from config import (API_TIMEOUT, AVAILABLE_FORMATS, AVAILABLE_MODELS,
-                    BRIEF_TEXT_AREA_HEIGHT, DEFAULT_ACCENT_COLOR,
-                    DEFAULT_FORMAT, DEFAULT_MAX_TOKENS, DEFAULT_MODEL,
-                    DEFAULT_TEMPERATURE, ENV_VAR_API_KEY, JPEG_QUALITY,
-                    LATEX_SYSTEM_PROMPT_PATH, LOG_FORMAT, LOG_LEVEL,
-                    MAX_FILE_BYTES, MAX_IMAGE_SIDE, MAX_TOKENS, MESSAGES,
-                    MIN_TOKENS, PAGE_TITLE, PREVIEW_IFRAME_HEIGHT,
+from config import (API_TIMEOUT, AVAILABLE_FORMATS, BRIEF_TEXT_AREA_HEIGHT,
+                    DEFAULT_ACCENT_COLOR, DEFAULT_FORMAT, DEFAULT_MAX_TOKENS,
+                    DEFAULT_MODEL, DEFAULT_TEMPERATURE, ENV_VAR_API_KEY,
+                    JPEG_QUALITY, LATEX_SYSTEM_PROMPT_PATH, LOG_FORMAT,
+                    LOG_LEVEL, MAX_FILE_BYTES, MAX_IMAGE_SIDE, MAX_TOKENS,
+                    MESSAGES, MIN_TOKENS, PAGE_TITLE, PREVIEW_IFRAME_HEIGHT,
                     SUPPORTED_CONTEXT_EXTENSIONS, SUPPORTED_IMAGE_EXTENSIONS,
                     SYSTEM_PROMPT_PATH, TOKEN_STEP)
 
@@ -25,14 +24,6 @@ class TestOpenAIConfig:
         """ENV_VAR_API_KEY debe ser un string no vacío."""
         assert isinstance(ENV_VAR_API_KEY, str)
         assert len(ENV_VAR_API_KEY) > 0
-    
-    def test_default_model_in_available(self):
-        """El modelo por defecto debe estar en la lista de disponibles."""
-        assert DEFAULT_MODEL in AVAILABLE_MODELS
-    
-    def test_available_models_not_empty(self):
-        """Debe haber al menos un modelo disponible."""
-        assert len(AVAILABLE_MODELS) > 0
     
     def test_token_limits_valid(self):
         """Los límites de tokens deben ser coherentes."""
